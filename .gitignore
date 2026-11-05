@@ -1,0 +1,7 @@
+# downloaded with GET_ASSETS.bat (large, and each download has its own licence notes)
+dist/assets/
+dist/fonts/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

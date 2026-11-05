@@ -1,0 +1,302 @@
+@import url('fonts/fonts.css');
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Overpass:wght@400;600;700;800&display=swap');
+
+/* Everway interface: borrowed from the road itself. Guide-sign green with a white inset border,
+   warning-sign amber for whatever is selected, asphalt glass for panels, highway lettering. */
+:root{
+  --sign:#0f6a4f;        /* guide sign green */
+  --sign-deep:#0a4d3a;
+  --white:#ffffff;
+  --amber:#f4b33d;       /* warning sign yellow: the one accent */
+  --asphalt:#252e31;     /* panel base */
+  --tarmac:rgba(30,38,41,.84);
+  --line:rgba(255,255,255,.14);
+  --mist:#d9e6e1;        /* secondary text */
+  --bg:var(--asphalt);
+  --display:'Big Shoulders Display','Arial Narrow',sans-serif;
+  --ui:'Overpass','Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#9fbdb6;color:var(--white);font-family:var(--ui);overflow:hidden;-webkit-font-smoothing:antialiased}
+#world{display:block;width:100vw;height:100dvh}
+button,select,input,output{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+.ico{width:20px;height:20px;display:block}
+
+/* ---------------------------------------------------------------- header */
+header{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 30px;pointer-events:none}
+header>*{pointer-events:auto}
+.brand{font-family:var(--display);font-weight:900;font-size:34px;line-height:1;color:var(--white);text-decoration:none;letter-spacing:.5px;text-shadow:0 2px 18px rgba(10,40,30,.35)}
+.place-sign{display:flex;align-items:center;gap:10px;background:var(--sign);color:var(--white);padding:9px 18px 7px 12px;border-radius:9px;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 4px var(--white),0 8px 24px rgba(8,30,22,.28);font-weight:700;font-size:15px;letter-spacing:.2px;transition:opacity .4s}
+.place-sign .ico{width:16px;height:16px}
+.round{width:46px;height:46px;border-radius:50%;border:0;background:var(--tarmac);color:var(--white);display:grid;place-items:center;backdrop-filter:blur(14px);box-shadow:0 6px 20px rgba(0,0,0,.18);transition:background .2s}
+.round:hover{background:var(--sign)}
+body.home .brand,body.home .place-sign{opacity:0}
+
+/* ---------------------------------------------------------------- settings panel */
+#panel{position:fixed;right:22px;top:84px;width:356px;max-height:calc(100dvh - 190px);overflow:auto;background:var(--tarmac);border-radius:16px;padding:20px 20px 22px;backdrop-filter:blur(22px) saturate(1.2);box-shadow:0 20px 60px rgba(5,20,15,.35);transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s;scrollbar-width:thin;scrollbar-color:#ffffff30 transparent;z-index:5}
+#panel.closed{transform:translateX(calc(100% + 40px));opacity:0;pointer-events:none}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.panel-head h2{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;margin:0;letter-spacing:.3px}
+#rendererMode{font-size:12px;color:var(--mist);opacity:.75}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:rgba(0,0,0,.22);border-radius:10px;padding:4px;margin-bottom:6px}
+.tabs button{border:0;background:none;padding:9px 0 7px;border-radius:7px;font-weight:700;font-size:14px;color:var(--mist)}
+.tabs button[aria-selected=true]{background:var(--sign);color:var(--white);box-shadow:inset 0 0 0 2px var(--white)}
+.pane h3{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:700;color:var(--mist);margin:18px 0 8px}
+.pane h3 output{font-variant-numeric:tabular-nums;color:var(--white)}
+
+/* segmented choices: the selected one becomes a little warning-yellow sign */
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:0;background:rgba(255,255,255,.07);border-radius:9px;padding:10px 4px 8px;font-size:13px;font-weight:600;color:var(--mist);transition:background .15s,color .15s}
+.seg button:hover{background:rgba(255,255,255,.13);color:var(--white)}
+.seg button.active{background:var(--amber);color:#1d2326}
+.seg .pic{display:block;width:46px;height:22px;margin:2px auto 6px;--bg:currentColor}
+.seg button.active .pic{--bg:var(--amber)}
+.rides button,.roads button{padding-top:12px}
+.rides button{font-size:12px}
+.seasons button{display:flex;flex-direction:column;align-items:center;gap:6px}
+.seasons button::before{content:'';width:14px;height:14px;border-radius:50%;background:var(--dot);box-shadow:0 0 0 2px rgba(0,0,0,.15)}
+
+/* places: little landscape postcards drawn with gradients */
+.places{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.places button{position:relative;border:0;border-radius:11px;background:rgba(255,255,255,.06);padding:6px 6px 9px;text-align:left;font-size:13px;font-weight:600;color:var(--white);transition:transform .15s,box-shadow .15s}
+.places button i{display:block;height:58px;border-radius:7px;margin-bottom:8px;background:
+  radial-gradient(60% 55% at 12% 104%,var(--near) 60%,transparent 61%),
+  radial-gradient(75% 62% at 82% 112%,var(--near) 60%,transparent 61%),
+  radial-gradient(55% 85% at 32% 112%,var(--far) 60%,transparent 61%),
+  radial-gradient(60% 75% at 72% 118%,var(--far) 60%,transparent 61%),
+  radial-gradient(9% 16% at 80% 28%,var(--alt,transparent) 70%,transparent 75%),
+  linear-gradient(var(--sky),#fff 150%)}
+.places button:hover{transform:translateY(-2px)}
+.places button.active{box-shadow:inset 0 0 0 3px var(--amber);background:rgba(244,179,61,.14)}
+
+/* weather */
+.weather{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.weather button{border:0;border-radius:9px;background:rgba(255,255,255,.07);padding:10px 0 8px;font-size:13px;font-weight:600;color:var(--mist)}
+.weather button b{display:block;font-size:20px;line-height:1.1;margin-bottom:3px;font-weight:400}
+.weather button.active{background:var(--amber);color:#1d2326}
+
+/* sliders */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:6px;background:rgba(255,255,255,.14);margin:6px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:4px solid var(--sign);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--white);border:4px solid var(--sign)}
+input.daylight{height:14px;background:linear-gradient(90deg,#14223a 0%,#2b3a63 18%,#e9a073 25%,#9cc7de 34%,#bfe0ee 50%,#9cc7de 66%,#f0a45e 76%,#7d4a6b 82%,#1b2744 90%,#14223a 100%)}
+.switch{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mist);margin-top:12px;cursor:pointer}
+.switch input{position:absolute;opacity:0}
+.switch span{width:38px;height:22px;border-radius:12px;background:rgba(255,255,255,.18);position:relative;transition:background .2s}
+.switch span::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--white);transition:transform .2s}
+.switch input:checked+span{background:var(--sign)}
+.switch input:checked+span::after{transform:translateX(16px)}
+.switch input:focus-visible+span{outline:3px solid var(--amber);outline-offset:2px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:20px 0 0;font-size:12px;color:var(--mist)}
+.keys dt{font-weight:700;color:var(--white);background:rgba(255,255,255,.1);border-radius:5px;padding:2px 7px 0;text-align:center}
+.keys dd{margin:0;align-self:center}
+
+/* ---------------------------------------------------------------- home screen */
+#intro{position:fixed;left:6vw;top:50%;transform:translateY(-50%);width:min(560px,88vw);transition:opacity .7s,transform .7s}
+#intro.gone{opacity:0;transform:translateY(-46%);pointer-events:none}
+.wordmark{font-family:var(--display);font-weight:900;font-size:clamp(84px,11vw,168px);line-height:.82;letter-spacing:1px;margin:0;color:var(--white);text-shadow:0 6px 40px rgba(10,40,30,.35)}
+.lede{font-size:18px;line-height:1.5;max-width:30em;margin:18px 0 26px;text-shadow:0 1px 14px rgba(10,40,30,.5)}
+
+/* the guide sign: the one bold thing on the page */
+.guide{background:var(--sign);border-radius:16px;padding:14px 10px;box-shadow:inset 0 0 0 4px var(--sign),inset 0 0 0 7px var(--white),0 24px 60px rgba(6,30,22,.38);max-width:440px}
+.dest{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;width:100%;border:0;background:none;color:var(--white);padding:9px 14px 7px;border-radius:8px;font-weight:700;font-size:22px;text-align:left;letter-spacing:.2px}
+.dest em{font-style:normal;font-weight:600;font-size:19px;font-variant-numeric:tabular-nums;opacity:.9}
+.dest .ico{width:26px;height:26px}
+.dest .right{transform:rotate(45deg)}.dest .left{transform:rotate(-45deg)}
+.dest:hover{background:rgba(255,255,255,.1)}
+.dest.active{background:var(--white);color:var(--sign)}
+#start{margin-top:22px;border:0;background:var(--amber);color:#1d2326;font-weight:800;font-size:19px;padding:15px 30px 12px;border-radius:12px;box-shadow:0 10px 30px rgba(60,40,0,.25);transition:transform .15s}
+#start:hover{transform:translateY(-2px)}
+#intro>small{display:block;font-size:13px;margin-top:14px;opacity:.85;text-shadow:0 1px 10px rgba(10,40,30,.6)}
+
+/* ---------------------------------------------------------------- driving display */
+footer{position:fixed;bottom:22px;left:30px;right:30px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;pointer-events:none;transition:opacity .5s}
+footer>*{pointer-events:auto}
+body.home footer{opacity:0;pointer-events:none}
+/* the display fades when you leave it alone, and H hides everything */
+/* a clean screen while driving: after a few quiet seconds only the speed sign and the compass stay;
+   the place sign comes back for a few seconds when you enter a new place. Any input shows everything. */
+header>*,footer .dashboard>*,footer .trip,footer #fullscreen,.dashboard{transition:opacity 1.2s,background-color 1.2s,box-shadow 1.2s}
+body.idle header>*{opacity:0;pointer-events:none}
+body.idle.placeflash header .place-sign{opacity:1}
+body.idle footer .dashboard>*:not(.speed):not(.gearbox),body.idle footer .trip,body.idle footer #fullscreen{opacity:0;pointer-events:none}
+body.idle footer .dashboard{background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.idle footer .dashboard .speed{box-shadow:inset 0 0 0 5px #c8392b,0 6px 18px rgba(0,0,0,.25)}
+body.idle #minimap{opacity:.9}
+body.idle footer .dashboard .conditions:has(#damage:not([hidden])){opacity:1}   /* damage stays in view */
+body.bare header,body.bare footer,body.bare #toast,body.bare #panel,body.bare #touch{opacity:0!important;pointer-events:none!important}
+header{transition:opacity .5s}
+body.home footer>*{pointer-events:none}
+.left-stack{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+#minimap{width:84px;height:84px;border-radius:50%;background:var(--tarmac);backdrop-filter:blur(12px);box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#minimap.big{width:168px;height:168px}
+#minimap[hidden]{display:none}
+.trip{display:flex;align-items:baseline;gap:8px;text-shadow:0 2px 14px rgba(0,0,0,.35)}
+.trip strong{font-family:var(--display);font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.trip span{font-size:13px;opacity:.85}
+.dashboard{display:flex;align-items:center;gap:6px;background:var(--tarmac);border-radius:16px;padding:8px 10px;backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(5,20,15,.3)}
+.dashboard button{border:0;background:none;color:var(--white);padding:8px 10px;border-radius:10px;display:grid;justify-items:center;gap:3px;font-size:18px;min-width:52px}
+.dashboard button:hover{background:rgba(255,255,255,.1)}
+.dashboard button small{font-size:11px;color:var(--mist)}
+.speed{display:grid;justify-items:center;background:var(--white);color:var(--asphalt);border-radius:50%;width:66px;height:66px;align-content:center;box-shadow:inset 0 0 0 5px #c8392b;margin:0 4px}
+.speed strong{font-family:var(--display);font-weight:900;font-size:28px;line-height:.9;font-variant-numeric:tabular-nums}
+.speed span{font-size:10px;font-weight:700}
+.conditions{padding:0 10px;min-width:150px}
+.conditions span{display:block;font-weight:700;font-size:14px}
+.conditions small{display:block;font-size:12px;color:var(--mist);margin-top:2px}
+/* gear and revs (when you drive yourself), damage after a knock */
+.gearbox{display:grid;justify-items:center;gap:5px;min-width:44px}
+.gearbox b{font-family:var(--display);font-weight:900;font-size:24px;line-height:1}
+.gearbox i{display:block;width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+.gearbox i span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),#e2562f)}
+.damage{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:11px;color:#ffb3a6}
+.damage i{display:block;width:60px;height:5px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
+.damage i span{display:block;height:100%;width:0;background:#e2562f}
+
+/* crash: a red-bordered warning sign over a darkened, shaken view */
+#crash{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(60,8,4,.35),rgba(10,4,2,.75));z-index:20}
+#crash[hidden]{display:none}
+.crash-sign{background:#fff;color:#1d2326;border-radius:22px;padding:30px 44px 28px;text-align:center;box-shadow:inset 0 0 0 10px #c8392b,inset 0 0 0 13px #fff,0 30px 80px rgba(0,0,0,.5);min-width:min(380px,86vw);animation:shake .45s ease-out}
+.crash-sign h2{font-family:var(--display);font-weight:900;font-size:clamp(56px,9vw,92px);line-height:.9;margin:6px 0 10px;color:#c8392b;letter-spacing:1px}
+.crash-sign p{margin:0 0 6px;font-size:17px}
+.crash-trip{color:#4a5458}
+.crash-trip strong{font-family:var(--display);font-weight:800;font-size:28px;color:#1d2326}
+#crash-home{margin-top:16px;border:0;background:var(--sign);color:#fff;font-weight:800;font-size:16px;padding:12px 22px 10px;border-radius:10px;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 4px #fff}
+@keyframes shake{0%{transform:translate(0) rotate(0)}20%{transform:translate(-10px,4px) rotate(-2deg)}40%{transform:translate(8px,-3px) rotate(1.5deg)}60%{transform:translate(-5px,2px) rotate(-1deg)}80%{transform:translate(3px,0) rotate(.5deg)}100%{transform:none}}
+.last-trip{display:block;margin-top:10px;font-size:14px;font-weight:600}
+/* home actions, journal, photo mode */
+.home-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.home-actions #start{margin-top:0}
+#continue{border:0;background:var(--white);color:var(--sign);font-weight:800;font-size:17px;padding:14px 22px 11px;border-radius:12px;box-shadow:inset 0 0 0 3px var(--sign)}
+button.ghost{border:0;background:rgba(20,30,28,.55);color:var(--white);font-weight:700;font-size:15px;padding:13px 18px 10px;border-radius:12px;backdrop-filter:blur(10px)}
+button.ghost:hover{background:var(--sign)}
+button.small{padding:8px 12px 6px;font-size:13px;border-radius:8px}
+#journal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(6,18,14,.55);z-index:25;padding:16px}
+#journal[hidden]{display:none}
+.journal-card{background:var(--tarmac);backdrop-filter:blur(22px);border-radius:18px;width:min(560px,100%);max-height:calc(100dvh - 40px);overflow:auto;padding:22px 24px 24px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.journal-head{display:flex;justify-content:space-between;align-items:center}
+.journal-head h2{font-family:var(--display);font-weight:900;font-size:40px;margin:0;line-height:1}
+.journal-card h3{display:flex;justify-content:space-between;font-size:14px;color:var(--mist);margin:20px 0 10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stats div{background:rgba(255,255,255,.06);border-radius:12px;padding:12px}
+.stats strong{display:block;font-family:var(--display);font-weight:800;font-size:30px;line-height:1}
+.stats span{font-size:12px;color:var(--mist)}
+.stamps{display:flex;flex-wrap:wrap;gap:8px}
+.stamps span{padding:7px 12px 5px;border-radius:8px;font-weight:700;font-size:13px;color:rgba(255,255,255,.4);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+.stamps span.got{background:var(--sign);color:#fff;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 4px #fff}
+.achievements{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.achievements li{padding:9px 11px 7px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12px;color:var(--mist)}
+.achievements li b{display:block;font-size:13px;color:rgba(255,255,255,.55)}
+.achievements li.got{background:rgba(244,179,61,.16);box-shadow:inset 0 0 0 2px var(--amber)}
+.achievements li.got b{color:var(--amber)}
+.code-line{display:flex;align-items:center;gap:8px;margin:0}
+.code-line output{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:1px;margin-right:auto}
+.code-form{display:flex;gap:8px;margin-top:10px}
+.code-form input{flex:1;min-width:0;border:0;border-radius:8px;padding:9px 12px 7px;background:rgba(255,255,255,.1);color:#fff;font-size:14px}
+.code-form button{border:0;background:var(--amber);color:#1d2326;font-weight:800}
+.journal-card .hint{font-size:12px;color:var(--mist);opacity:.8;margin:10px 0 0}
+#photobar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:var(--tarmac);padding:8px 8px 8px 16px;border-radius:14px;backdrop-filter:blur(18px);z-index:12}
+#photobar[hidden]{display:none}
+#photobar span{font-size:13px;color:var(--mist);margin-right:6px}
+#photobar #photo-save{border:0;background:var(--amber);color:#1d2326;font-weight:800;padding:11px 16px 8px;border-radius:10px}
+body.photo header,body.photo footer,body.photo #panel,body.photo #touch{opacity:0!important;pointer-events:none!important}
+body.photo #world{cursor:grab}
+.toast-ach{background:var(--amber)!important;color:#1d2326;box-shadow:inset 0 0 0 2px var(--amber),inset 0 0 0 4px #1d2326,0 10px 30px rgba(0,0,0,.2)!important}
+#toast{position:fixed;top:92px;left:50%;transform:translate(-50%,-6px);background:var(--sign);padding:10px 20px 8px;border-radius:10px;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 4px var(--white),0 10px 30px rgba(0,0,0,.2);opacity:0;transition:opacity .4s,transform .4s;font-weight:600;font-size:14px;pointer-events:none;z-index:6}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#touch{display:none;position:fixed;bottom:calc(120px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));justify-content:space-between;align-items:flex-end;pointer-events:none}
+#touch>*{pointer-events:auto}
+#t-wheel{width:150px;height:64px;border-radius:32px;background:var(--tarmac);backdrop-filter:blur(12px);display:grid;place-items:center;touch-action:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+#t-knob{width:52px;height:52px;border-radius:50%;background:var(--white);box-shadow:0 4px 12px rgba(0,0,0,.3);transition:transform .15s}
+#t-wheel:active #t-knob{transition:none}
+.t-pedals{display:flex;gap:10px;align-items:flex-end}
+.t-pedals button{width:70px;border:0;border-radius:14px;color:var(--white);font:700 14px var(--ui);touch-action:none;background:var(--tarmac);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+#t-brake{height:64px}#t-gas{height:100px}
+.t-pedals button.on{background:var(--amber);color:#1d2326}
+#error{position:fixed;inset:20%;background:var(--asphalt);padding:40px;z-index:10;border-radius:16px}
+
+/* ---------------------------------------------------------------- atmosphere overlays */
+#weatherfx,#motion{position:fixed;inset:0;pointer-events:none}
+#weatherfx{transition:background 2s;background:linear-gradient(rgba(8,20,35,var(--night,0)),transparent)}
+#weatherfx.rainy{background-image:repeating-linear-gradient(105deg,transparent 0,transparent 59px,#d7e9f00a 60px,transparent 61px);background-size:200px 120px;animation:rainfall .45s linear infinite}
+#weatherfx.snowy{background-color:#d6e5e60c}
+#motion{background:repeating-conic-gradient(from 12deg at 50% 52%,#ffffff00 0deg 16deg,#fff5 16.1deg 16.3deg,#ffffff00 16.4deg 35deg);mask-image:radial-gradient(ellipse,transparent 37%,#000 100%);opacity:0}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 45%,rgba(10,30,25,.22)),linear-gradient(rgba(10,30,25,.3),transparent 20%,transparent 78%,rgba(10,30,25,.4))}
+body.home .vignette{background:linear-gradient(90deg,rgba(8,32,24,.7),rgba(8,32,24,.35) 38%,transparent 62%),linear-gradient(rgba(10,30,25,.25),transparent 20%)}
+@keyframes rainfall{to{background-position:-50px 120px}}
+
+/* ---------------------------------------------------------------- small screens */
+@media(max-width:760px){
+  header{padding:14px 16px}
+  .brand{font-size:28px}
+  .place-sign{font-size:13px;padding:7px 12px 5px 9px}
+  #panel{right:12px;left:12px;width:auto;top:72px;max-height:calc(100dvh - 180px)}
+  #intro{left:16px;right:16px;width:auto;top:46%}
+  .lede{font-size:15px;margin:12px 0 16px}
+  .dest{font-size:17px;padding:7px 10px 5px}.dest em{font-size:15px}
+  footer{left:12px;right:12px;bottom:12px}
+  .trip{position:fixed;left:16px;bottom:104px}
+  .trip strong{font-size:28px}
+  .conditions{display:none}
+  #fullscreen{display:none}
+  .dashboard{margin:auto}
+  #touch{display:flex}
+  #toast{max-width:90%;font-size:12px}
+}
+@media(max-width:760px) and (max-height:700px){.lede{display:none}}
+@media(max-height:620px){.wordmark{font-size:64px}.lede{display:none}.guide{padding:8px 6px}.dest{font-size:16px;padding:5px 10px 3px}.dest em{font-size:14px}#start{margin-top:12px;padding:11px 22px 9px}#intro>small{display:none}}
+@media(prefers-reduced-motion:reduce){#motion{display:none}#weatherfx{animation:none}*{transition-duration:.01ms!important}}
+
+/* fork in the road: a small guide sign with the two ways */
+#fork{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:6;background:var(--sign);border-radius:12px;padding:10px 14px 12px;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 4px var(--white),0 12px 30px rgba(0,0,0,.25);text-align:center;min-width:min(440px,calc(100vw - 32px))}
+#fork[hidden]{display:none}
+#fork .fork-head{margin:2px 0 8px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.02em}
+#fork .fork-head span{font-family:var(--ui);font-weight:600;font-size:14px;color:var(--mist);margin-left:6px}
+#fork .fork-ways{display:flex;gap:10px}
+#fork button{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;font:600 16px var(--ui);color:var(--white);background:var(--sign-deep);border:2px solid rgba(255,255,255,.35);border-radius:8px;padding:10px 12px;cursor:pointer}
+#fork button .arr{font-size:22px;line-height:1}
+#fork button.on{background:var(--amber);color:#1d2326;border-color:var(--amber)}
+#fork button:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+#fork .fork-hint{margin:8px 0 0;font-size:12px;color:var(--mist)}
+body.bare #fork{opacity:0;pointer-events:none}
+
+/* postcards in the journal */
+.postcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+.postcards .card{margin:0;background:#f3efe4;color:#2a2f2c;border-radius:6px;padding:6px 6px 8px;box-shadow:0 6px 16px rgba(0,0,0,.25);transform:rotate(-.6deg)}
+.postcards .card:nth-child(even){transform:rotate(.7deg)}
+.postcards .card img,.postcards .card .blank{display:block;width:100%;aspect-ratio:16/9;border-radius:3px;object-fit:cover}
+.postcards .card .blank{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#e4ddcc 0 8px,#ebe5d6 8px 16px);color:#7c7466;font-size:12px}
+.postcards .card:not(.got){opacity:.6;transform:none}
+.postcards figcaption{font-size:11px;line-height:1.35;margin-top:6px;color:#5d5a52}
+.postcards figcaption b{display:block;font-size:12px;color:#2a2f2c}
+
+/* replays */
+body.replaying header,body.replaying footer,body.replaying #fork{opacity:0!important;pointer-events:none!important}
+#replaybar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:var(--tarmac);padding:8px 10px;border-radius:14px;backdrop-filter:blur(18px);z-index:12;width:min(760px,calc(100vw - 32px))}
+#replaybar[hidden]{display:none}
+#replaybar .rp-label{font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.03em;color:var(--amber);padding:0 4px}
+#replaybar input[type=range]{flex:1;min-width:80px;accent-color:var(--amber)}
+#replaybar output{font-variant-numeric:tabular-nums;font-size:13px;color:var(--mist);min-width:44px}
+#replaybar button{font:600 13px var(--ui);color:var(--white);background:rgba(255,255,255,.1);border:0;border-radius:9px;padding:9px 12px;cursor:pointer}
+#replaybar #rp-play{min-width:40px;font-size:14px}
+#replaybar #rp-exit{background:var(--amber);color:#1d2326;font-weight:800}
+#replaybar button.on{background:var(--white);color:#1d2326}
+#replaybar button:focus-visible,#replaybar input:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+@media (max-width:640px){#replaybar .rp-label,#replaybar #rp-cam{display:none}}
+
+/* side roads: the offer and the arrival card share the fork card's look, in tourist-sign brown */
+.tripcard{position:fixed;left:50%;bottom:236px;transform:translateX(-50%);z-index:6;background:#6b3d23;border-radius:12px;padding:10px 14px 12px;box-shadow:inset 0 0 0 2px #6b3d23,inset 0 0 0 4px var(--white),0 12px 30px rgba(0,0,0,.25);text-align:center;min-width:min(400px,calc(100vw - 32px))}
+.tripcard[hidden]{display:none}
+.tripcard .fork-head{margin:2px 0 4px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.02em}
+.tripcard .fork-head span{font-family:var(--ui);font-weight:600;font-size:14px;color:#f1dfcf;margin-left:6px}
+.tripcard .trip-what{margin:0 0 10px;font-size:14px}
+.tripcard .fork-ways{display:flex;gap:10px}
+.tripcard button{flex:1;font:600 15px var(--ui);color:var(--white);background:#4f2c18;border:2px solid rgba(255,255,255,.35);border-radius:8px;padding:10px 12px;cursor:pointer}
+.tripcard button.on{background:var(--amber);color:#1d2326;border-color:var(--amber)}
+.tripcard button:focus-visible{outline:3px solid var(--white);outline-offset:2px}
+.tripcard .fork-hint{margin:8px 0 0;font-size:12px;color:#f1dfcf}
+body.bare .tripcard,body.replaying .tripcard{opacity:0;pointer-events:none}
+#veil{position:fixed;inset:0;background:#0b1512;opacity:0;pointer-events:none;transition:opacity .6s;z-index:30}
+#veil.on{opacity:1}

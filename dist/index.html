@@ -1,0 +1,164 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f5c45"><title>Everway</title><meta name="description" content="An endless scenic drive through green hills, wild coast, desert, mountains and snow. Pick a place, a season and a road, and just drive."><link rel="stylesheet" href="style.css"></head>
+<body class="home">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-car" viewBox="0 0 48 24"><path d="M4 17c0-3 2-5 6-5l6-5h13l7 5c5 0 8 2 8 5v2H4z" fill="currentColor"/><circle cx="13" cy="19" r="3.6" fill="currentColor" stroke="var(--bg)" stroke-width="2"/><circle cx="36" cy="19" r="3.6" fill="currentColor" stroke="var(--bg)" stroke-width="2"/></symbol>
+  <symbol id="i-moto" viewBox="0 0 48 24"><circle cx="11" cy="17" r="5.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="37" cy="17" r="5.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11 17l9-8h9l8 8M24 9l-3-4h-5M29 9h5l3-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bike" viewBox="0 0 48 24"><circle cx="11" cy="16" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="37" cy="16" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M11 16l7-9h12l7 9M18 7l6 9h6M28 4h5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-coach" viewBox="0 0 48 24"><rect x="3" y="4" width="42" height="14" rx="3" fill="currentColor"/><rect x="8" y="7" width="31" height="4" rx="1" fill="var(--bg)"/><circle cx="12" cy="19" r="3.4" fill="currentColor" stroke="var(--bg)" stroke-width="2"/><circle cx="36" cy="19" r="3.4" fill="currentColor" stroke="var(--bg)" stroke-width="2"/></symbol>
+  <symbol id="i-relaxed" viewBox="0 0 48 24"><path d="M3 18c12 0 16-12 42-12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-normal" viewBox="0 0 48 24"><path d="M3 18c8 0 8-12 16-12s8 12 16 12 6-8 10-8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-twisty" viewBox="0 0 48 24"><path d="M3 12c4-9 7-9 9 0s5 9 8 0 5-9 8 0 5 9 8 0 4-6 9-2" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h3M11 17h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="17" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9c1.5 1.6 1.5 4.4 0 6M18.5 6.5c3 3.2 3 7.8 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M12 20V5M5 11l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<canvas id="world" aria-label="The road and the land around it"></canvas>
+<div id="weatherfx"></div><div id="motion"></div><div class="vignette"></div>
+
+<header>
+  <a class="brand" href="#" aria-label="Everway">Everway</a>
+  <div class="place-sign" aria-live="polite"><svg class="ico"><use href="#i-arrow"/></svg><span id="region">The Green Valley</span></div>
+  <button id="settings" class="round" title="Journey settings" aria-label="Journey settings" aria-controls="panel"><svg class="ico"><use href="#i-sliders"/></svg></button>
+</header>
+
+<aside id="panel" class="closed" aria-label="Journey settings">
+  <div class="panel-head"><h2>Your journey</h2><span id="rendererMode">High graphics</span></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="trip" aria-selected="true">Trip</button>
+    <button role="tab" data-tab="sky" aria-selected="false">Sky</button>
+    <button role="tab" data-tab="drive" aria-selected="false">Driving</button>
+  </div>
+
+  <section class="pane" data-pane="trip">
+    <h3>Ride</h3>
+    <div class="seg rides" id="rides">
+      <button data-value="car" class="active"><svg class="pic"><use href="#i-car"/></svg>Car</button>
+      <button data-value="bike"><svg class="pic"><use href="#i-moto"/></svg>Motorbike</button>
+      <button data-value="coach"><svg class="pic"><use href="#i-coach"/></svg>Coach</button>
+      <button data-value="cycle"><svg class="pic"><use href="#i-bike"/></svg>Bicycle</button>
+    </div>
+    <h3>Place</h3>
+    <div class="places" id="biome">
+      <button data-value="auto" class="active" style="--sky:#bcd7d9;--far:#7f9b8d;--near:#6c9a54;--alt:#d7b06a"><i></i>Let the road decide</button>
+      <button data-value="fields" style="--sky:#c9e0e2;--far:#8eb07a;--near:#6f9c4f"><i></i>Green valley</button>
+      <button data-value="town" style="--sky:#d3e2df;--far:#9ab08a;--near:#7ea062;--alt:#b45a3c"><i></i>Little town</button>
+      <button data-value="coast" style="--sky:#cfe2e6;--far:#2f6f7c;--near:#7d9b58"><i></i>Wild coast</button>
+      <button data-value="desert" style="--sky:#ecd7b8;--far:#c98a5a;--near:#d8b07d"><i></i>Route 66</button>
+      <button data-value="mountain" style="--sky:#cfdde3;--far:#8a9aa0;--near:#5e8455;--alt:#f3f6f7"><i></i>Alpine escape</button>
+      <button data-value="snow" style="--sky:#dfe8ec;--far:#b4c3c9;--near:#eef3f4"><i></i>Snow country</button>
+      <button data-value="planet" style="--sky:#e8b48e;--far:#a95a3c;--near:#c27a4c"><i></i>Another world</button>
+    </div>
+    <h3>Season</h3>
+    <div class="seg seasons" id="season">
+      <button data-value="spring" style="--dot:#9fd06a">Spring</button>
+      <button data-value="summer" class="active" style="--dot:#4f8a3a">Summer</button>
+      <button data-value="autumn" style="--dot:#d0782c">Autumn</button>
+      <button data-value="winter" style="--dot:#e9f1f4">Winter</button>
+    </div>
+    <h3>The road</h3>
+    <div class="seg roads" id="difficulty">
+      <button data-value="relaxed"><svg class="pic"><use href="#i-relaxed"/></svg>Relaxed</button>
+      <button data-value="normal" class="active"><svg class="pic"><use href="#i-normal"/></svg>Normal</button>
+      <button data-value="twisty"><svg class="pic"><use href="#i-twisty"/></svg>Twisty</button>
+    </div>
+  </section>
+
+  <section class="pane" data-pane="sky" hidden>
+    <h3>Time of day <output id="clocklabel">16:30</output></h3>
+    <input id="time" class="daylight" type="range" min="0" max="24" step=".05" value="16.5" aria-label="Time of day">
+    <label class="switch"><input type="checkbox" id="autotime" checked><span></span>Let time pass</label>
+    <h3>Weather</h3>
+    <div class="weather" id="weather">
+      <button data-value="auto" class="active"><b>↻</b>Changes</button>
+      <button data-value="sunny"><b>☀</b>Clear</button>
+      <button data-value="cloudy"><b>☁</b>Cloudy</button>
+      <button data-value="rainy"><b>☂</b>Rain</button>
+      <button data-value="windy"><b>≋</b>Windy</button>
+      <button data-value="snowy"><b>❄</b>Snow</button>
+    </div>
+  </section>
+
+  <section class="pane" data-pane="drive" hidden>
+    <h3>Who drives</h3>
+    <div class="seg" id="modes"><button data-value="cruise" class="active">Autodrive</button><button data-value="manual">I’ll drive</button></div>
+    <h3>Cruising speed</h3>
+    <input id="speed" type="range" min="12" max="110" value="65" aria-label="Cruising speed">
+    <h3>Traffic</h3>
+    <div class="seg" id="traffic"><button data-value="none" class="active">None</button><button data-value="light">Light</button><button data-value="busy">Busy</button></div>
+    <h3>Sound</h3>
+    <label class="switch"><input type="checkbox" id="soundswitch"><span></span>Engine, road and nature sounds</label>
+    <label class="switch"><input type="checkbox" id="radioswitch"><span></span>Music</label>
+    <label class="switch"><input type="checkbox" id="pedalswap"><span></span>Swap the pedals (steering wheel)</label>
+    <h3>Map</h3>
+    <div class="seg" id="mapmode"><button data-value="off">Off</button><button data-value="compass" class="active">Compass</button><button data-value="map">Mini-map</button></div>
+    <h3>Display while driving</h3>
+    <div class="seg" id="hudmode"><button data-value="clean" class="active">Clean</button><button data-value="full">Everything</button></div>
+    <h3>View distance</h3>
+    <div class="seg" id="view"><button data-value="short">Short</button><button data-value="medium" class="active">Medium</button><button data-value="far">Far</button><button data-value="veryfar">Very far</button></div>
+    <h3>Graphics</h3>
+    <div class="seg" id="quality"><button data-value="auto" class="active">Auto</button><button data-value="high">High</button><button data-value="balanced">Balanced</button><button data-value="low">Fast</button></div>
+    <dl class="keys"><dt>W / ↑</dt><dd>Accelerate</dd><dt>S / ↓</dt><dd>Brake</dd><dt>A D / ← →</dt><dd>Steer</dd><dt>C</dt><dd>Camera</dd><dt>Space</dt><dd>Pause</dd><dt>H</dt><dd>Hide everything on screen</dd><dt>P</dt><dd>Photo mode</dd></dl>
+  </section>
+</aside>
+
+<main id="intro">
+  <h1 class="wordmark">Everway</h1>
+  <p class="lede">An endless drive through green hills, wild coast, desert and snow. No destination, no timer. Just the road.</p>
+  <div class="guide" role="group" aria-label="Choose where to start">
+    <button class="dest active" data-biome="auto"><svg class="ico up"><use href="#i-arrow"/></svg><span>All the way</span><em>∞</em></button>
+    <button class="dest" data-biome="fields"><svg class="ico up"><use href="#i-arrow"/></svg><span>Green Valley</span><em>0 km</em></button>
+    <button class="dest" data-biome="coast"><svg class="ico right"><use href="#i-arrow"/></svg><span>Wild Coast</span><em>7.6 km</em></button>
+    <button class="dest" data-biome="desert"><svg class="ico right"><use href="#i-arrow"/></svg><span>Route 66</span><em>11.4 km</em></button>
+    <button class="dest" data-biome="mountain"><svg class="ico left"><use href="#i-arrow"/></svg><span>Alps</span><em>15.2 km</em></button>
+    <button class="dest" data-biome="snow"><svg class="ico left"><use href="#i-arrow"/></svg><span>Quiet North</span><em>19.0 km</em></button>
+  </div>
+  <div class="home-actions"><button id="start">Start driving</button><button id="continue" hidden>Continue</button><button id="journalbtn" class="ghost">Journal</button></div>
+  <small>Pick a place on the sign or let the road decide. Space pauses, C changes the camera, H hides everything.</small>
+</main>
+
+<div id="crash" hidden role="alertdialog" aria-labelledby="crash-title">
+  <div class="crash-sign">
+    <h2 id="crash-title">Totalled</h2>
+    <p id="crash-why">You hit a tree.</p>
+    <p class="crash-trip"><strong id="crash-km">0.0</strong> km before it ended</p>
+    <button id="crash-home">Back to the menu</button>
+  </div>
+</div>
+<div id="journal" hidden role="dialog" aria-labelledby="journal-title">
+  <div class="journal-card">
+    <div class="journal-head"><h2 id="journal-title">Journal</h2><button id="journal-close" class="round" aria-label="Close">✕</button></div>
+    <div class="stats"><div><strong id="j-total">0</strong><span>km driven in all</span></div><div><strong id="j-longest">0</strong><span>km, longest drive</span></div><div><strong id="j-drives">0</strong><span>drives ended</span></div></div>
+    <h3>Places</h3><div class="stamps" id="j-places"></div>
+    <h3>Postcards <output id="j-pcount">0</output></h3><div class="postcards" id="j-cards"></div>
+    <h3>Achievements <output id="j-count">0</output></h3><ul class="achievements" id="j-ach"></ul>
+    <h3>Journey code</h3>
+    <p class="code-line"><output id="j-code">00001-N0</output><button id="j-copy" class="ghost small">Copy</button><button id="j-new" class="ghost small">New road</button></p>
+    <form id="j-form" class="code-form"><input id="j-input" placeholder="Enter a code, e.g. K3F9Q-N2" aria-label="Journey code" autocomplete="off"><button class="small">Drive this road</button></form>
+    <p class="hint" id="j-msg">The same code always gives the same road, land and scenery. Share yours with a friend.</p>
+  </div>
+</div>
+<div id="photobar" hidden><span>Drag to look around, scroll to zoom</span><button id="photo-save">Save picture</button><button id="photo-car" class="ghost">Hide vehicle</button><button id="photo-exit" class="ghost">Done</button></div>
+<div id="toast" role="status"></div>
+
+<footer>
+  <div class="left-stack"><canvas id="minimap" width="168" height="168" aria-label="Map of the road ahead"></canvas><div class="trip"><strong id="distance">0.00</strong><span>km driven</span></div></div>
+  <div class="dashboard">
+    <button id="pause" title="Pause" aria-label="Pause">Ⅱ</button>
+    <div class="speed"><strong id="speedometer">0</strong><span>km/h</span></div>
+    <div class="gearbox" id="gearbox" hidden><b id="gear">1</b><i><span id="rev"></span></i></div>
+    <div class="conditions"><span id="condition">Clear skies</span><small id="clock">16:30 · Afternoon</small><div class="damage" id="damage" hidden><i><span id="damagebar"></span></i>Damage</div></div>
+    <button id="photo" title="Photo mode (P)" aria-label="Photo mode"><svg class="ico"><use href="#i-cam"/></svg><small>Photo</small></button>
+    <button id="replay" title="Replay the last two minutes (R)" aria-label="Replay"><svg class="ico" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Replay</small></button>
+    <button id="camera" title="Change camera" aria-label="Change camera"><svg class="ico"><use href="#i-cam"/></svg><small>View</small></button>
+    <button id="sound" title="Sound" aria-label="Sound"><svg class="ico"><use href="#i-sound"/></svg><small>Sound off</small></button>
+  </div>
+  <button id="fullscreen" class="round" title="Fullscreen" aria-label="Fullscreen"><svg class="ico"><use href="#i-full"/></svg></button>
+</footer>
+
+<div id="touch"><div id="t-wheel" role="slider" aria-label="Steer: drag left or right" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0"><span id="t-knob"></span></div><div class="t-pedals"><button id="t-brake" aria-label="Brake">Brake</button><button id="t-gas" aria-label="Accelerate">Go</button></div></div>
+<div id="error" hidden></div>
+<script type="module" src="app.js"></script>
+</body></html>
