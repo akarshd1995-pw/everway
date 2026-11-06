@@ -21,6 +21,7 @@ import {updateLife} from './engine/life.js';
 import {updateFork} from './engine/fork.js';
 import {updateDetails} from './engine/details.js';
 import {updateTrip} from './engine/trip.js';
+import {updateEvents} from './engine/events.js';
 import {recordReplay, replayFrame} from './engine/replay.js';
 import {updateWeather,updatePrecipitation} from './engine/weather.js';
 import {updateCamera} from './engine/camera.js';
@@ -88,6 +89,7 @@ function frame(now) {
   updateLife(dt, run, base, yBase);
   updateFork(dt, run, base, yBase);
   updateTrip(dt, run, base, yBase);
+  updateEvents(dt, run, base, yBase);
   updateDetails(dt, run);
 
   // sky, wind, light

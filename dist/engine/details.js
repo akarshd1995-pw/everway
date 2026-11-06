@@ -3,9 +3,10 @@
 import * as T from '../three.module.js';
 import {G, state} from './state.js';
 import {scene, camera} from './render.js';
-import {headGlow} from './actors.js';
+import {headGlow, traffic} from './actors.js';
 import {forkSignal} from './fork.js';
 import {sfx} from './audio.js';
+import {structureAt} from './terrain.js';
 import {toast} from './hud.js';
 
 /* ------------------------------------------------------------ indicators */
@@ -52,9 +53,51 @@ function updateWipers(dt) {
   for (const p of blades) p.rotation.z = -1.45 + a * 1.75;   // resting flat along the bottom, sweeping up across the glass
 }
 
+/* ------------------------------------------------------------ headlights */
+// Dipped or full beam (L), and a quick double flash (F). Autodrive dips for oncoming traffic and for a
+// car ahead by itself. Driving yourself, an oncoming driver flashes you if you leave full beam on;
+// and when a tractor pulls in to let you by, a flash says thanks.
+state.beam = 'dipped'; G.beamK = 1; G.flash = 0;
+let flashT = 0, glareT = 0, glareSaid = -1e9, autoBeam = true;
+const dark = () => (G.nightAmt || 0) > .2 || structureAt(state.distance) === 2;
+function oncoming(range) { for (const c of traffic) { const u = c.userData; if (c.visible && u.direction === -1 && u.s - state.distance > 10 && u.s - state.distance < range) return c; } return null; }
+function carAhead(range) { for (const c of traffic) { const u = c.userData; if (c.visible && u.direction === 1 && u.s - state.distance > 5 && u.s - state.distance < range && Math.abs((u.lat ?? 3) - (state.side ?? 3)) < 2) return c; } return null; }
+addEventListener('keydown', e => {
+  if (['INPUT', 'SELECT'].includes(document.activeElement.tagName) || e.repeat || !state.started) return;
+  const k = e.key.toLowerCase();
+  if (k === 'l') { state.beam = state.beam === 'full' ? 'dipped' : 'full'; autoBeam = false; toast(state.beam === 'full' ? 'Full beam.' : 'Dipped headlights.'); }
+  if (k === 'f') flashLights();
+});
+export function flashLights() {
+  flashT = .7;
+  const c = G.courtesy;
+  if (c && G.elapsed < c.until && state.distance > c.u.s + 5) { G.courtesy = null; setTimeout(() => toast('The tractor driver raises a hand.'), 600); }
+}
+const flashCar = new Map();
+function updateLights(dt, run) {
+  // flash: two short bright pulses
+  flashT = Math.max(0, flashT - dt); G.flash = flashT > 0 && ((.7 - flashT) % .35) < .18 ? 1 : 0;
+  if (state.mode === 'cruise' || autoBeam) {
+    autoBeam = state.mode === 'cruise' ? true : autoBeam;
+    state.beam = dark() && !oncoming(320) && !carAhead(140) ? 'full' : 'dipped';
+  }
+  G.beamK += ((state.beam === 'full' && dark() ? 1.8 : 1) - G.beamK) * Math.min(1, dt * 6);
+  // driving yourself with full beam into oncoming traffic: they flash you
+  const oc = run && state.mode === 'manual' && state.beam === 'full' && dark() ? oncoming(220) : null;
+  glareT = oc ? glareT + dt : 0;
+  if (oc && glareT > 1.2 && !flashCar.has(oc)) { flashCar.set(oc, 1.2); if (G.elapsed - glareSaid > 60) { glareSaid = G.elapsed; toast('An oncoming driver flashed you. Press L to dip your lights.'); } }
+  for (const [c, t] of flashCar) {
+    const left = t - dt, on = left > 0 && ((1.2 - left) % .4) < .2;
+    for (const sp of c.userData.glows || []) if (sp.position.z < 0) { sp.userData.flashOn = on; sp.scale.setScalar(on ? 2.4 : 1.05); }
+    if (left <= 0) flashCar.delete(c); else flashCar.set(c, left);
+  }
+  // our own head lamps glow while flashing, even by day
+  for (const sp of G.player?.userData.glows || []) if (sp.position.z < 0) { sp.userData.flashOn = !!G.flash; sp.scale.setScalar(G.flash ? 2.6 : state.beam === 'full' && dark() ? 1.7 : 1.05); }
+}
+
 /* ------------------------------------------------------------ a word about ice */
 let iceT = 0;
 function updateIce(dt, run) { iceT = Math.max(0, iceT - dt); if (run && state.ice && state.speed > 8 && iceT === 0) { iceT = 60; toast('Ice on the road. Gently does it.'); } }
 
 /** Call every frame. */
-export function updateDetails(dt, run) { updateIndicators(dt, run); updateWipers(dt); updateIce(dt, run); }
+export function updateDetails(dt, run) { updateIndicators(dt, run); updateWipers(dt); updateIce(dt, run); updateLights(dt, run); }

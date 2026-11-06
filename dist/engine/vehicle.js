@@ -12,6 +12,7 @@ import {handling, resetVehicle, impact} from './physics.js';
 import {roadCurvature} from './road.js';
 import {hash2} from './core.js';
 import {villageNear} from './chunks.js';
+import {stopFor, laneFor} from './events.js';
 import {biomeAt} from './biomes.js';
 import {currentFork, branchAt} from './fork.js';
 
@@ -55,7 +56,7 @@ export function updateTraffic(dt, run, base, yBase) {
   const count = G.trip ? 0 : TRAFFIC[state.traffic] ?? 6;   // no traffic down a side road
   for (let i = 0; i < traffic.length; i++) {
     const car = traffic[i], u = car.userData;
-    car.visible = u.kind === 'cycle' ? count > 0 && !['desert', 'planet', 'snow'].includes(biomeAt(u.s)) : i < count;
+    car.visible = u.kind === 'cycle' ? count > 0 && !['desert', 'planet', 'snow'].includes(biomeAt(u.s)) : i < count || u.mode === 'turnoff';
     if (!car.visible) continue;
     if (!u.ind && u.kind !== 'cycle') u.ind = indicators(car);
     const home = (u.direction === 1 ? 1 : -1) * (u.kind === 'cycle' ? ROAD.half - .8 : ROAD.lane);
@@ -72,6 +73,22 @@ export function updateTraffic(dt, run, base, yBase) {
       }
       if (u.direction === 1 && state.distance > u.s && Math.abs(pside - u.lat) < 1.8) { const gap = state.distance - u.s - (u.len + h.length) / 2; if (!ahead || gap < ahead.gap) ahead = {gap, v: state.speed}; }
       let target = u.speed;
+      // a tractor turning off into a field: slows, signals, then leaves the road through a gate
+      if (u.mode === 'turnoff') {
+        target = u.t > 9 ? 3 : 6; if (u.t > 6) u.sig = u.turnSide;
+        if (u.t > 11) u.want = u.turnSide * (ROAD.half + 14);
+        if (Math.abs(u.lat) > ROAD.half + 11) { u.mode = 'gone'; respawn(u, state.distance + 900); }
+      }
+      // a slow tractor pulls in to let you by when you have been stuck behind it for a while
+      if (u.kind === 'tractor' && u.mode === 'drive' && u.direction === 1) {
+        const gap = (state.distance - u.s);
+        if (gap < 0 && gap > -35 && Math.abs(pside - u.lat) < 2 && state.speed < u.speed + 2) u.behind = (u.behind || 0) + dt; else u.behind = 0;
+        if (u.behind > 5) { u.mode = 'pull'; u.stopAt = u.s + 35; u.want = ROAD.half + .9; u.sig = 1; u.stopFor = 7; u.stopped = true; u.behind = 0; G.courtesy = {until: G.elapsed + 25, u}; }
+      }
+      // events on the road: stop where they say, and use the open lane past roadworks
+      const stopAt = stopFor(u.direction, u.s);
+      if (stopAt !== null) target = Math.min(target, Math.max(0, (stopAt - u.s) * u.direction * .6));
+      const lane = laneFor(u.direction, u.s); if (lane !== null && u.mode === 'drive') u.want = lane; else if (lane === null && u.mode === 'drive' && Math.abs(u.want - home) > .1 && !u.passOf) u.want = home;
       // overtaking: stuck behind something slow on a straight with the other lane clear for a good way
       if (u.mode === 'drive' && u.kind !== 'tractor' && u.kind !== 'cycle' && ahead && ahead.gap < 25 && ahead.v < u.speed - 3) {
         u.stuck = (u.stuck || 0) + dt;
@@ -93,7 +110,7 @@ export function updateTraffic(dt, run, base, yBase) {
         if (v && Math.abs(u.s + 60 - v.stop) < 3 && hash2(i, Math.floor(v.stop)) < .4) { u.mode = 'pull'; u.stopAt = v.stop; u.want = ROAD.half + .9; u.sig = 1; u.stopFor = 8 + hash2(i, 9) * 10; u.stopped = true; }
       }
       // keep a safe gap behind whatever is ahead
-      if (ahead && u.mode !== 'pass') target = Math.min(target, Math.max(0, ahead.v + (ahead.gap - 8) * .5));
+      if (ahead && u.mode !== 'pass' && u.mode !== 'turnoff') target = Math.min(target, Math.max(0, ahead.v + (ahead.gap - 8) * .5));
       u.cur = (u.cur ?? u.speed) + Math.max(-6 * dt, Math.min(3 * dt, target - (u.cur ?? u.speed)));
       u.s += u.cur * u.direction * dt * roadCos(u.s);
       u.lat += Math.max(-1.4 * dt, Math.min(1.4 * dt, u.want - u.lat));   // lane changes take a couple of seconds
@@ -159,8 +176,8 @@ function forkOffset(u) {
 
 /** Head and tail lamp glows on at night. */
 export function updateLamps(on) {
-  for (const s of G.player.userData.glows) s.visible = on;
-  for (let i = 0; i < traffic.length; i++) for (const s of traffic[i].userData.glows || []) s.visible = on;
+  for (const s of G.player.userData.glows) s.visible = on || !!s.userData.flashOn;
+  for (let i = 0; i < traffic.length; i++) for (const s of traffic[i].userData.glows || []) s.visible = on || !!s.userData.flashOn;
 }
 
 /* ---- smoke from a damaged vehicle: a small pool of soft grey puffs that rise and fade */

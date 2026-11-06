@@ -11,6 +11,8 @@ import {groundHeight, SEA_LEVEL, barrierAt} from './terrain.js';
 import {forObstaclesNear} from './obstacles.js';
 import {CH, biomeAt} from './biomes.js';
 import {hash2} from './core.js';
+// road events (events.js) register themselves here, so this file needs nothing from the 3D side
+const stopFor = (d, s) => G.roadEvents ? G.roadEvents.stopFor(d, s) : null, laneFor = (d, s) => G.roadEvents ? G.roadEvents.laneFor(d, s) : null;
 
 const g = 9.81;
 /** Handling for each ride. Speeds in m/s, accelerations in m/s². */
@@ -66,12 +68,14 @@ function autodrive(h, v) {
   // a vehicle ahead in our lane: keep about two seconds behind it
   // at the end of a side road, come to a gentle stop
   if (G.trip) want = Math.min(want, Math.sqrt(Math.max(0, 2 * 1.4 * (G.trip.end - 8 - s))));
+  // events on the road: wait at a red light or for animals to cross, and take the open lane past roadworks
+  { const st = stopFor(1, s); if (st !== null) want = Math.min(want, Math.sqrt(Math.max(0, 2 * 2.4 * (st - s - 3)))); }
   const L = state.lead;
   if (L) { const safe = 8 + h.length + v * 1.8, follow = L.v + (L.gap - safe) * .35; want = Math.min(want, Math.max(0, follow)); }
   const dv = want - v;
   auto.throttle = clamp(dv * .6, 0, 1); auto.brake = clamp(-dv * .35, 0, 1);
   // pure pursuit towards the lane centre a little way ahead, plus the road's own curvature
-  const Ld = 7 + v * .55, e = ROAD.lane - state.side;
+  const Ld = 7 + v * .55, e = (laneFor(1, s + 30) ?? laneFor(1, s) ?? ROAD.lane) - state.side;
   const alpha = Math.atan2(e, Ld) - state.psi;
   auto.delta = Math.atan(2 * h.wheelbase * Math.sin(alpha) / Ld) + Math.atan(h.wheelbase * roadCurvature(s + Ld * .5));
   return auto;
@@ -171,8 +175,9 @@ function stepOnce(dt, keys, h) {
   }
   // ---- the end of a side road: the lane stops here
   if (G.trip && state.distance > G.trip.end - 2) { state.distance = G.trip.end - 2; state.speed = Math.min(state.speed, .5); }
+  if (G.eventCrash) { const r = G.eventCrash; G.eventCrash = null; return r; }
   // ---- into the sea
-  if (state.y < SEA_LEVEL + .2) return crash('sea');
+  if (state.y < SEA_LEVEL + .2 && Math.abs(state.side) > ROAD.half + 1) return crash('sea');
   // wandered far from the road: bring the vehicle back
   if (Math.abs(state.side) > 380) { resetVehicle(8); event = 'back'; }
   state.hit = Math.max(0, state.hit - dt * 2);

@@ -138,6 +138,8 @@ function extend(s) {
     const lookI = Math.min(i + 14, n - 1), want = clamp((smoothedLand(lookI) - gen.y) / ((lookI - i) * D || 1), -cfg.grade, cfg.grade);
     gen.g += clamp(want - gen.g, -.0011 * D / 5, .0011 * D / 5);
     gen.y += gen.g * D;
+    // never let the road sink to the sea: below the causeway height it levels out and climbs again
+    if (gen.y < -30 + 7) { gen.y = -30 + 7; gen.g = Math.max(gen.g, 0); }
     Y[i] = gen.y; gen.ny++;
   }
 }

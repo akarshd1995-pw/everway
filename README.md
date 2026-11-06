@@ -62,13 +62,20 @@ Also new in v3, with or without the download:
 ## Controls
 
 - Settings button (top right): ride, scenery, weather, time, cruise speed, driving mode.
-- W / Up: accelerate in manual mode.
-- S / Down: brake.
-- A D / Left Right: steer.
-- C: switch camera.
-- Space: pause/resume.
-- Bottom controls: camera, optional synthesized sound, fullscreen.
-- Mobile: on-screen arrows.
+- W / Up: accelerate in manual mode. S / Down: brake. A D / Left Right: steer.
+- Drag with the mouse (or the right stick): look around while driving.
+- C: switch camera. P: photo mode. R: replay the last two minutes. H: hide the display. Space: pause.
+- At a fork: Left / Right while autodrive steers, or Q / E when you drive. At a side road: T to turn off (and T to go back).
+- L: full beam / dipped headlights (autodrive dips them by itself). F: flash your headlights.
+- Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
+- Phones: drag the round steering pad, hold Go and Brake.
+
+## Version 3.16: life on the road, and headlights
+
+- Now and then (every few kilometres at most) something happens on the road: sheep wander across in the countryside, roadworks close your lane with cones and a temporary traffic light, a tractor ahead slows, signals and turns off into a field, and at dusk deer cross in the hills. Autodrive and the traffic slow down and wait; driving yourself, you deal with them (driving into an animal is a knock, and running a red light gets a word).
+- Headlights: L switches between dipped and full beam at night. Autodrive uses full beam on empty roads and dips for oncoming traffic and for a car ahead. Driving yourself, an oncoming driver flashes you if you leave full beam on.
+- F flashes your headlights. When a slow tractor pulls in to let you by, a flash says thanks (and the driver raises a hand).
+- Fixed: on twisty roads in the snow the road could sink to sea level, which autodrive took for driving into the sea. The road now always stays above the sea, and the sea only counts once you leave the road.
 
 ## Version 3.15: real roads, a livelier world, better driving
 
@@ -295,6 +302,7 @@ Add ?debug to the address (for example http://localhost:8000/?debug) to show:
   - obstacles.js, coach.js — what you can crash into; the coach, van, tractor and caravan models.
   - fork.js, replay.js, details.js — forks in the road; replays; indicators, hazard lights and wipers.
   - trip.js — side roads to a beach, a farm or a viewpoint.
+  - events.js — sheep, deer, roadworks and the tractor turning off.
   - birds.js, photo.js, progress.js — birds; photo mode; saved journey, journal, achievements and journey codes.
   - life.js — chimney smoke, waterfall spray, the field tractor, sailing boats, turning sails, the lighthouse beam and landmark notices.
   - reflect.js — mirrored reflections on lakes.
