@@ -6,7 +6,7 @@ import {G, state} from './state.js';
 import {camera, canvas} from './render.js';
 import {ROAD, roadHeight, roadSurface, roadX, roadYaw, sideX} from './road.js';
 import {terrainParams} from './biomes.js';
-import {groundHeight, structureAt} from './terrain.js';
+import {groundHeight, groundAtX, structureAt} from './terrain.js';
 import {skyDome} from './sky.js';
 import {handling} from './physics.js';
 import {photoCam} from './photo.js';
@@ -162,6 +162,8 @@ export function updateCamera(dt, base, yBase) {
   if (debugView) { camera.position.copy(debugView.p); camera.lookAt(debugView.t); }
   else {
     if (state.cam === 3) camera.position.copy(cp); else camera.position.lerp(cp, 1 - Math.exp(-dt * (state.cam === 1 ? 20 : glance.held || Math.abs(glance.yaw) > .05 ? 9 : 3)));
+    // never inside a hillside: on a cutting or a slope, the chase and side cameras rise above the ground
+    if (state.cam !== 1) { const S = s - camera.position.z, gh = groundAtX(S, camera.position.x + base, terrainParams(S)) - yBase + .8; if (camera.position.y < gh) camera.position.y = gh; }
     camera.lookAt(look);
   }
   camera.fov = state.cam === 3 && !debugView ? fov : lerp(camera.fov, fov, Math.min(1, dt * 2)); camera.updateProjectionMatrix();
