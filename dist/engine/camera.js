@@ -10,6 +10,8 @@ import {groundHeight, groundAtX, structureAt} from './terrain.js';
 import {skyDome} from './sky.js';
 import {handling} from './physics.js';
 import {photoCam} from './photo.js';
+import {villageNear} from './chunks.js';
+import {biomeAt} from './biomes.js';
 
 /** Looking around while driving: drag with the mouse or a finger, or use the right stick. The view
  * eases back behind the vehicle a moment after you let go. yaw/pitch are radians. */
@@ -27,7 +29,7 @@ function updateGlance(dt) {
 }
 export const CAMERAS = ['Chase camera', 'Driver’s view', 'Scenic camera', 'Cinematic camera'];
 const cp = new T.Vector3(), look = new T.Vector3();
-let debugView = null, yawS = 0, lastCam = -1;
+let debugView = null, yawS = 0, lastCam = -1, sideK = 0;
 /** Pin the camera (debug and screenshot tests). Pass null to release. */
 export function setDebugView(p, t) { debugView = p ? {p: new T.Vector3(...p), t: new T.Vector3(...t)} : null; }
 
@@ -149,7 +151,10 @@ export function updateCamera(dt, base, yBase) {
     around(look, 0, -60, yawS + gy); look.y = ground(60) + 1.4 - gp * 60;
     fov = 65 + state.speed * .25;
   } else if (state.cam === 2) {
-    around(cp, -10 - cam.dist * .3, 10 + cam.dist * .3, yawS + gy); cp.y = Math.max(py, ground(-10)) + 5.8 + gp * 8;
+    // among houses (a village or a town) the side camera comes in over the pavement and up, clear of the buildings
+    const v = villageNear(s), built = (v && Math.abs(s - v.vc) < 190) || biomeAt(s) === 'town';
+    sideK += ((built ? 1 : 0) - sideK) * Math.min(1, dt * 1.5);
+    around(cp, lerp(-10 - cam.dist * .3, -4.5, sideK), 10 + cam.dist * .3, yawS + gy); cp.y = Math.max(py, ground(-10)) + 5.8 + sideK * 3.5 + gp * 8;
     around(look, 0, -16, yawS); look.y = ground(16);
     fov = 50 + state.speed * .1;
   } else fov = cinematic(dt, base, yBase);
