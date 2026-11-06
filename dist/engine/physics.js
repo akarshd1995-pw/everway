@@ -63,16 +63,20 @@ const auto = {delta: 0, throttle: 0, brake: 0, sig: 0};
 const ov = {mode: 'lane', stuck: 0, u: null, t: 0, vPass: 0};
 /** Is the stretch from s to s + len straight, open and free of anything that would make overtaking unwise? */
 function openRoad(s, len) {
+  if (!(len < 900)) return false;   // too long a pass to see through (and never look kilometres ahead)
   for (let d = 0; d <= len; d += 15) if (Math.abs(roadCurvature(s + d)) > .0035 || laneFor(1, s + d) !== null) return false;   // you need to see the whole way
   if (stopFor(1, s + len) !== null || stopFor(1, s) !== null || laneFor(1, s + len) !== null) return false;   // lights, animals, roadworks
   if (G.forkS != null && G.forkS > s - 40 && G.forkS < s + len + 60) return false;                     // not across a fork
   return !G.trip;
 }
 /** Time and distance to get past `u` at speed vPass, from a gap of `gap` metres behind it (negative: already alongside). */
-function passNeeds(gap, u, vPass, h) {
-  const uv = Math.max(0, u.cur ?? u.speed), rel = Math.max(1.5, vPass - uv);
-  const T = (Math.max(0, gap) + (h.length + u.len) + 14) / rel + 2.2;   // past it with room to spare, plus the lane changes
-  return {T, dist: vPass * T};
+function passNeeds(gap, u, vPass, h, v0) {
+  // step through the pass: we speed up from where we are (at a realistic, gentle rate) towards vPass
+  const uv = Math.max(0, u.cur ?? u.speed), need = Math.max(0, gap) + (h.length + u.len) + 14, a = h.accel * .4;
+  let v = Math.max(0, v0), gained = 0, dist = 0, T = 0;
+  while (gained < need && T < 45) { v = Math.min(vPass, v + a * .25); gained += (v - uv) * .25; dist += v * .25; T += .25; }
+  if (gained < need) return {T: Infinity, dist: Infinity};   // we would never get past
+  return {T: T + 2.2, dist: dist + v * 2.2};                 // plus the lane changes
 }
 /** Is the other lane clear for long enough? The nearest vehicle there must be far enough away to still be clear when we are back. */
 function otherLaneClear(T, dist, passing) {
@@ -101,8 +105,8 @@ function autodrive(h, v, dt) {
     const slow = L && L.u && L.v >= 0 && L.gap < 35 && L.v < cruise - 2.5 && L.u.mode !== 'pull' && L.u.mode !== 'stop';
     ov.stuck = slow ? ov.stuck + dt : Math.max(0, ov.stuck - dt);
     if (slow && canOvertake && ov.stuck > 2 && Math.abs(state.side - ROAD.lane) < .6) {
-      const vPass = Math.min(h.top, Math.max(cruise, L.v + 7)), need = passNeeds(L.gap, L.u, vPass, h);
-      if (vPass > L.v + 4 && openRoad(s, need.dist + 40) && otherLaneClear(need.T, need.dist)) { ov.mode = 'out'; ov.u = L.u; ov.t = 0; ov.vPass = vPass; ov.stuck = 0; }
+      const vPass = Math.min(h.top, Math.max(cruise, L.v + 7)), need = passNeeds(L.gap, L.u, vPass, h, v);
+      if (vPass > L.v + 4 && need.T < 25 && openRoad(s, need.dist + 40) && otherLaneClear(need.T, need.dist)) { ov.mode = 'out'; ov.u = L.u; ov.t = 0; ov.vPass = vPass; ov.stuck = 0; }
     }
   }
   if (ov.mode === 'out') {
@@ -112,7 +116,7 @@ function autodrive(h, v, dt) {
     if (by > 9 + v * .25) { ov.mode = 'back'; ov.t = 0; }
     else {
       // keep checking: if the other lane will not stay clear long enough, drop back while we still can
-      const need = passNeeds(-by - (h.length + u.len), u, ov.vPass, h);
+      const need = passNeeds(-by - (h.length + u.len), u, ov.vPass, h, v);
       const clear = otherLaneClear(need.T, need.dist, u) && openRoad(s, need.dist);
       const behind = u.s - s > (h.length + u.len) / 2 + 1;   // still wholly behind it
       if (!clear && behind) { ov.mode = 'abort'; ov.t = 0; }
