@@ -156,6 +156,7 @@ export function updateCamera(dt, base, yBase) {
   if (G.photo) {   // photo mode: orbit around the vehicle
     const P = G.player.position, c = Math.cos(photoCam.pitch);
     cp.set(P.x + Math.sin(photoCam.yaw) * c * photoCam.dist, P.y + 1 + Math.sin(photoCam.pitch) * photoCam.dist, P.z + Math.cos(photoCam.yaw) * c * photoCam.dist);
+    { const S = s - cp.z, gh = groundAtX(S, cp.x + base, terrainParams(S)) - yBase + .8; if (cp.y < gh) cp.y = gh; }   // not inside a hill
     look.set(P.x, P.y + 1, P.z); fov = 45;
     camera.position.copy(cp); camera.lookAt(look); camera.fov = fov; camera.updateProjectionMatrix(); skyDome.position.copy(camera.position); return;
   }
