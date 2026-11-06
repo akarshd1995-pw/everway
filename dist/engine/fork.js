@@ -122,6 +122,7 @@ function paint() {
 
 /* ------------------------------------------------------------ each frame */
 export function updateFork(dt, run, base, yBase) {
+  G.forkS = null;
   if (G.trip) { card.hidden = true; sign.visible = false; branch.visible = false; forkSignal = 0; return; }   // down a side road
   const s = state.distance, L = Math.round((s + 220 + SHOW / 2) / LEG);
   let f = null;
@@ -146,6 +147,7 @@ export function updateFork(dt, run, base, yBase) {
   }
   const chosen = locked || sel, side = chosen === f.left ? -1 : 1;
   forkSignal = s > f.sj - 320 && s < f.sj + 15 ? side : 0;
+  G.forkS = f.sj;
   // the card
   const showCard = run && !locked && s > f.sj - SHOW && s < f.sj - LOCK;
   if (showCard && chosenL !== f.L) { if (card.hidden) { card.hidden = false; paint(); } card.querySelector('#fork-km').textContent = ((f.sj - s) / 1000).toFixed(1) + ' km'; }

@@ -41,7 +41,7 @@ export const steerInput = keys => (keys.ArrowLeft || keys.a ? -1 : 0) + (keys.Ar
 export function resetVehicle(speed = state.speed) {
   state.side = ROAD.lane; state.psi = 0; state.delta = 0; state.speed = speed;
   state.y = roadSurface(state.distance, state.side); state.vy = 0; state.airborne = false;
-  state.lat = 0; state.lon = 0; state.slip = 0; state.offroad = 0; state.hit = 0; state.crashed = null; state.lead = null;
+  state.lat = 0; state.lon = 0; state.slip = 0; state.offroad = 0; state.hit = 0; state.crashed = null; state.lead = null; state.opp = null; resetAutodrive();
   if (speed === 0 || state.damage === undefined) state.damage = 0;   // a fresh vehicle at the start of a journey
 }
 
@@ -56,30 +56,100 @@ function gripNow(h) {
   return h.grip * (w === 'rainy' ? .72 : cold ? .55 : 1) * surface * ice;
 }
 
-/** Autodrive: follow the lane, slow for bends ahead. Returns {steer angle, throttle, brake}. */
-const auto = {delta: 0, throttle: 0, brake: 0};
-function autodrive(h, v) {
+/** Autodrive: follow the lane, slow for bends ahead, and overtake slow vehicles when the way is clear.
+ *  Returns {steer angle, throttle, brake}. */
+const auto = {delta: 0, throttle: 0, brake: 0, sig: 0};
+// overtaking: 'lane' (in our own lane), 'out' (in the other lane, going past), 'back' (returning to our lane)
+const ov = {mode: 'lane', stuck: 0, u: null, t: 0, vPass: 0};
+/** Is the stretch from s to s + len straight, open and free of anything that would make overtaking unwise? */
+function openRoad(s, len) {
+  for (let d = 0; d <= len; d += 15) if (Math.abs(roadCurvature(s + d)) > .0035 || laneFor(1, s + d) !== null) return false;   // you need to see the whole way
+  if (stopFor(1, s + len) !== null || stopFor(1, s) !== null || laneFor(1, s + len) !== null) return false;   // lights, animals, roadworks
+  if (G.forkS != null && G.forkS > s - 40 && G.forkS < s + len + 60) return false;                     // not across a fork
+  return !G.trip;
+}
+/** Time and distance to get past `u` at speed vPass, from a gap of `gap` metres behind it (negative: already alongside). */
+function passNeeds(gap, u, vPass, h) {
+  const uv = Math.max(0, u.cur ?? u.speed), rel = Math.max(1.5, vPass - uv);
+  const T = (Math.max(0, gap) + (h.length + u.len) + 14) / rel + 2.2;   // past it with room to spare, plus the lane changes
+  return {T, dist: vPass * T};
+}
+/** Is the other lane clear for long enough? The nearest vehicle there must be far enough away to still be clear when we are back. */
+function otherLaneClear(T, dist, passing) {
+  const o = state.opp; if (!o || (passing && o.u === passing)) return true;
+  if (o.v <= 0) return o.gap > dist + 30;          // going our way (overtaking too): wait until it is well ahead
+  return o.gap > dist + o.v * T + 90;              // coming towards us: its distance must cover both journeys and a good margin
+}
+function autodrive(h, v, dt) {
   const s = state.distance;
   // the sharpest bend in the next stretch sets a comfortable speed for it
   let kmax = 0;
   for (let d = 10; d <= 40 + v * 4; d += 10) kmax = Math.max(kmax, Math.abs(roadCurvature(s + d)));
   const comfort = (state.ride === 'coach' ? 1.6 : 2.6) * Math.min(1, gripNow(h));
-  let want = Math.min(state.target / 3.6, h.top, kmax > 1e-4 ? Math.sqrt(comfort / kmax) : Infinity);
-  // a vehicle ahead in our lane: keep about two seconds behind it
+  const cruise = Math.min(state.target / 3.6, h.top, kmax > 1e-4 ? Math.sqrt(comfort / kmax) : Infinity);
+  let want = cruise;
   // at the end of a side road, come to a gentle stop
   if (G.trip) want = Math.min(want, Math.sqrt(Math.max(0, 2 * 1.4 * (G.trip.end - 8 - s))));
   // events on the road: wait at a red light or for animals to cross, and take the open lane past roadworks
   { const st = stopFor(1, s); if (st !== null) want = Math.min(want, Math.sqrt(Math.max(0, 2 * 2.4 * (st - s - 3)))); }
   const L = state.lead;
-  if (L) { const safe = 8 + h.length + v * 1.8, follow = L.v + (L.gap - safe) * .35; want = Math.min(want, Math.max(0, follow)); }
+  let lane = laneFor(1, s + 30) ?? laneFor(1, s) ?? ROAD.lane;
+  const canOvertake = state.ride !== 'cycle' && state.overtake !== false;
+
+  if (ov.mode === 'lane') {
+    // stuck behind something slower in our lane: wait a moment, then go past when the way is clear
+    const slow = L && L.u && L.v >= 0 && L.gap < 35 && L.v < cruise - 2.5 && L.u.mode !== 'pull' && L.u.mode !== 'stop';
+    ov.stuck = slow ? ov.stuck + dt : Math.max(0, ov.stuck - dt);
+    if (slow && canOvertake && ov.stuck > 2 && Math.abs(state.side - ROAD.lane) < .6) {
+      const vPass = Math.min(h.top, Math.max(cruise, L.v + 7)), need = passNeeds(L.gap, L.u, vPass, h);
+      if (vPass > L.v + 4 && openRoad(s, need.dist + 40) && otherLaneClear(need.T, need.dist)) { ov.mode = 'out'; ov.u = L.u; ov.t = 0; ov.vPass = vPass; ov.stuck = 0; }
+    }
+  }
+  if (ov.mode === 'out') {
+    const u = ov.u; ov.t += dt;
+    const by = s - u.s - (h.length + u.len) / 2;     // how far our back is past its front (negative: not past yet)
+    lane = -ROAD.lane; want = ov.vPass; auto.sig = -1;
+    if (by > 9 + v * .25) { ov.mode = 'back'; ov.t = 0; }
+    else {
+      // keep checking: if the other lane will not stay clear long enough, drop back while we still can
+      const need = passNeeds(-by - (h.length + u.len), u, ov.vPass, h);
+      const clear = otherLaneClear(need.T, need.dist, u) && openRoad(s, need.dist);
+      const behind = u.s - s > (h.length + u.len) / 2 + 1;   // still wholly behind it
+      if (!clear && behind) { ov.mode = 'abort'; ov.t = 0; }
+      else if (!clear) want = h.top;                         // alongside already: get past quickly
+      if (ov.t > 30 || u.mode === 'gone' || u.s - s > 120) { ov.mode = 'back'; ov.t = 0; }
+    }
+  }
+  if (ov.mode === 'abort') {
+    // ease off behind the vehicle we meant to pass and go back into our lane
+    const u = ov.u, behind = u.s - s - (h.length + u.len) / 2;
+    want = Math.min(want, Math.max(0, (u.cur ?? u.speed) - 3 + (behind - 6) * .3));
+    lane = behind > 2 ? ROAD.lane : -ROAD.lane; auto.sig = 1;
+    if (Math.abs(state.side - ROAD.lane) < .4) { ov.mode = 'lane'; ov.u = null; auto.sig = 0; ov.stuck = -4; }
+  }
+  if (ov.mode === 'back') {
+    lane = ROAD.lane; auto.sig = 1; ov.t += dt;
+    if (Math.abs(state.side - ROAD.lane) < .35 || ov.t > 8) { ov.mode = 'lane'; ov.u = null; auto.sig = 0; }
+  }
+  if (ov.mode === 'lane') auto.sig = 0;
+
+  // a vehicle ahead in our lane: keep about two seconds behind it (while overtaking, only something coming
+  // the other way counts, and then we brake hard)
+  if (L && !(ov.mode === 'out' && L.u === ov.u)) {
+    if (L.v < 0) want = Math.min(want, Math.max(0, (L.gap - 25) * .25));   // head-on: stop
+    else { const safe = 8 + h.length + v * 1.8, follow = L.v + (L.gap - safe) * .35; want = Math.min(want, Math.max(0, follow)); }
+  }
   const dv = want - v;
-  auto.throttle = clamp(dv * .6, 0, 1); auto.brake = clamp(-dv * .35, 0, 1);
+  auto.throttle = clamp(dv * .6, 0, 1); auto.brake = clamp(-dv * (L && L.v < 0 ? .9 : .35), 0, 1);
   // pure pursuit towards the lane centre a little way ahead, plus the road's own curvature
-  const Ld = 7 + v * .55, e = (laneFor(1, s + 30) ?? laneFor(1, s) ?? ROAD.lane) - state.side;
+  const Ld = 7 + v * .55, e = lane - state.side;
   const alpha = Math.atan2(e, Ld) - state.psi;
   auto.delta = Math.atan(2 * h.wheelbase * Math.sin(alpha) / Ld) + Math.atan(h.wheelbase * roadCurvature(s + Ld * .5));
   return auto;
 }
+/** Overtaking state, for the indicators and for a fresh start. */
+export const autoSignal = () => (state.mode === 'cruise' ? auto.sig : 0);
+export function resetAutodrive() { ov.mode = 'lane'; ov.u = null; ov.stuck = 0; auto.sig = 0; }
 
 let Pcache = null, Ps = -1e9;
 const paramsAt = s => { if (Math.abs(s - Ps) > 8) { Pcache = terrainParams(s); Ps = s; } return Pcache; };
@@ -100,7 +170,7 @@ function stepOnce(dt, keys, h) {
   let delta, throttle, brake;
   if (state.crashed) { state.speed = 0; return null; }
   if (state.mode === 'cruise') {
-    const a = autodrive(h, v); delta = a.delta; throttle = a.throttle; brake = a.brake;
+    const a = autodrive(h, v, dt); delta = a.delta; throttle = a.throttle; brake = a.brake;
   } else {
     const maxSteer = h.steer / (1 + v / h.steerSpeed);           // steering gets gentler with speed
     const pad = state.pad, tc = state.touch;

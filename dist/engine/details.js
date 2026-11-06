@@ -5,6 +5,7 @@ import {G, state} from './state.js';
 import {scene, camera} from './render.js';
 import {headGlow, traffic} from './actors.js';
 import {forkSignal} from './fork.js';
+import {autoSignal} from './physics.js';
 import {sfx} from './audio.js';
 import {structureAt} from './terrain.js';
 import {toast} from './hud.js';
@@ -25,7 +26,7 @@ function updateIndicators(dt, run) {
   // which way: towards the road taken at a fork, the way you are moving across the road, or both after a knock
   if ((state.damage || 0) > lastDamage + .01) hazardT = 4; lastDamage = state.damage || 0; hazardT = Math.max(0, hazardT - dt);
   if (state.mode === 'manual' && state.speed > 5 && Math.abs(state.psi || 0) > .06) { laneT += dt; laneDir = Math.sign(state.psi); } else laneT = Math.max(0, laneT - dt * 2);
-  const want = !run || state.crashed ? 0 : hazardT > 0 ? 2 : forkSignal || (laneT > .25 ? laneDir : 0);
+  const want = !run || state.crashed ? 0 : hazardT > 0 ? 2 : autoSignal() || forkSignal || (laneT > .25 ? laneDir : 0);
   if (!want) { amber.opacity = 0; blinkT = 0; lit = false; return; }
   blinkT += dt; const on = (blinkT % .72) < .38;
   if (on !== lit) { lit = on; sfx(on ? 'tick' : 'tock'); }

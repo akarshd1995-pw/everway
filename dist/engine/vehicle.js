@@ -51,7 +51,7 @@ export function updatePlayer(dt, run, keys, yBase) {
 /** How many of the vehicles are on the road for each traffic setting. */
 export const TRAFFIC = {none: 0, light: 6, busy: 15};
 export function updateTraffic(dt, run, base, yBase) {
-  let nearMiss = false, lead = null;
+  let nearMiss = false, lead = null, opp = null;
   const h = handling(), pside = state.side ?? ROAD.lane;
   const count = G.trip ? 0 : TRAFFIC[state.traffic] ?? 6;   // no traffic down a side road
   for (let i = 0; i < traffic.length; i++) {
@@ -73,6 +73,10 @@ export function updateTraffic(dt, run, base, yBase) {
       }
       if (u.direction === 1 && state.distance > u.s && Math.abs(pside - u.lat) < 1.8) { const gap = state.distance - u.s - (u.len + h.length) / 2; if (!ahead || gap < ahead.gap) ahead = {gap, v: state.speed}; }
       let target = u.speed;
+      // someone coming the other way in this lane (overtaking): slow down and keep well over to the verge
+      const facing = u.direction === -1 ? (u.s - state.distance) : -1;
+      if (facing > 0 && facing < 220 && Math.abs(pside - u.lat) < 2.6) { target = Math.min(target, u.speed * (facing < 90 ? .45 : .7)); if (u.mode === 'drive') u.want = home - .9; u.yield = 2; }
+      else if (u.yield > 0) { u.yield -= dt; if (u.yield <= 0 && u.mode === 'drive' && !u.passOf) u.want = home; }
       // a tractor turning off into a field: slows, signals, then leaves the road through a gate
       if (u.mode === 'turnoff') {
         target = u.t > 9 ? 3 : 6; if (u.t > 6) u.sig = u.turnSide;
@@ -92,12 +96,14 @@ export function updateTraffic(dt, run, base, yBase) {
       // overtaking: stuck behind something slow on a straight with the other lane clear for a good way
       if (u.mode === 'drive' && u.kind !== 'tractor' && u.kind !== 'cycle' && ahead && ahead.gap < 25 && ahead.v < u.speed - 3) {
         u.stuck = (u.stuck || 0) + dt;
-        if (u.stuck > 2.5 && Math.abs(roadCurvature(u.s + u.direction * 120)) < .0025 && clearFor(u, 260)) { u.mode = 'pass'; u.want = -home; u.sig = -Math.sign(home); u.passOf = ahead.o || null; u.stuck = 0; }
+        if (u.stuck > 2.5 && Math.abs(roadCurvature(u.s + u.direction * 120)) < .0025 && Math.abs(roadCurvature(u.s + u.direction * 240)) < .0025 && clearFor(u, 480)) { u.mode = 'pass'; u.want = -home; u.sig = -Math.sign(home); u.passOf = ahead.o || null; u.stuck = 0; }
       } else u.stuck = 0;
       if (u.mode === 'pass') {
         target = u.speed * 1.25;
         const by = u.passOf ? (u.s - u.passOf.s) * u.direction : 30;
         if (by > (u.len + 12) || u.t > 25) { u.mode = 'back'; u.want = home; u.sig = Math.sign(home); u.t = 0; }
+        // something coming: drop back behind the slow vehicle if not yet alongside
+        else if (by < -(u.len + 1) && !clearFor(u, 160)) { u.mode = 'back'; u.want = home; u.sig = Math.sign(home); u.t = 0; target = u.passOf ? u.passOf.speed * .8 : u.speed * .6; }
       } else if (u.mode === 'back') { if (Math.abs(u.lat - home) < .2) { u.mode = 'drive'; u.sig = 0; } }
       else if (u.mode === 'stop') {   // parked by a village shop or the petrol station for a little while
         target = 0;
@@ -131,7 +137,9 @@ export function updateTraffic(dt, run, base, yBase) {
     car.rotation.z = roadBank(u.s) * u.direction;
     // the car ahead in our lane (autodrive keeps its distance), and collisions with any car
     const along = (u.s - state.distance) / roadCos(state.distance);
-    if (!off.gone && along > 0 && Math.abs(side - pside) < 2.2 && (!lead || along - (h.length + u.len) / 2 < lead.gap)) lead = {gap: along - (h.length + u.len) / 2, v: run ? (u.cur ?? u.speed) * u.direction : 0};
+    if (!off.gone && along > 0 && Math.abs(side - pside) < 2.2 && (!lead || along - (h.length + u.len) / 2 < lead.gap)) lead = {gap: along - (h.length + u.len) / 2, v: run ? (u.cur ?? u.speed) * u.direction : 0, u};
+    // the nearest vehicle ahead in the other lane, and how fast it is coming towards us (for overtaking)
+    if (!off.gone && along > -(h.length + u.len) / 2 - 2 && side < 0 && (!opp || along < opp.gap)) opp = {gap: along - (h.length + u.len) / 2, v: run ? -(u.cur ?? u.speed) * u.direction : 0, u};
     if (run && !off.gone && !state.crashed && !nearMiss && Math.abs(along) < (h.length + u.len) / 2 && Math.abs(side - pside) < h.width + .95) {
       // closing speed decides: a nudge dents, a real collision totals
       const theirs = u.direction * (u.cur ?? u.speed), rel = Math.abs(state.speed - theirs);
@@ -139,7 +147,7 @@ export function updateTraffic(dt, run, base, yBase) {
       if (nearMiss === 'knock') { state.speed = Math.max(0, Math.min(state.speed, theirs) * .7); state.side += Math.sign(pside - side || 1) * .6; }
     }
   }
-  state.lead = lead;
+  state.lead = lead; state.opp = opp;
   return nearMiss;
 }
 
