@@ -104,7 +104,8 @@ document.body.appendChild(card);
 let cur = null, sel = null, signKey = '';
 /** -1 or 1 while the vehicle should signal towards the road it takes at a fork, else 0. */
 export let forkSignal = 0;
-function choose(way) { if (!cur || state.distance > cur.sj - LOCK) return; sel = cur[way]; paint(); }
+let chosenL = -1;   // the fork whose card was answered: it closes, and the keys can still change the way
+function choose(way) { if (!cur || state.distance > cur.sj - LOCK) return; sel = cur[way]; chosenL = cur.L; paint(); card.hidden = true; toast(`At the fork: ${way === 'left' ? 'left' : 'right'}, to ${PLACES[sel]}.`); }
 card.querySelectorAll('button').forEach(b => b.onclick = () => choose(b.dataset.way));
 addEventListener('keydown', e => {
   if (!cur || card.hidden || ['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
@@ -147,7 +148,7 @@ export function updateFork(dt, run, base, yBase) {
   forkSignal = s > f.sj - 320 && s < f.sj + 15 ? side : 0;
   // the card
   const showCard = run && !locked && s > f.sj - SHOW && s < f.sj - LOCK;
-  if (showCard) { if (card.hidden) { card.hidden = false; paint(); } card.querySelector('#fork-km').textContent = ((f.sj - s) / 1000).toFixed(1) + ' km'; }
+  if (showCard && chosenL !== f.L) { if (card.hidden) { card.hidden = false; paint(); } card.querySelector('#fork-km').textContent = ((f.sj - s) / 1000).toFixed(1) + ' km'; }
   else card.hidden = true;
   // the other road leaves on the side not taken
   const key = f.L + ':' + side + ':' + ROAD.half;

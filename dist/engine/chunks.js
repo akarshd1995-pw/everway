@@ -68,7 +68,13 @@ function* chunkBuilder(index){
   const near={solid:new Batch(),foliage:new Batch({sway:true})},far={solid:new Batch(),foliage:new Batch({sway:true})};
   const lamps=new Batch(),windows=new Batch(),pools=new Batch({uv:true}),signs=new Batch({uv:true}),wires=[];
   const HQ=USABLE_MODELS,perChunk={},lod={solid:new Batch(),foliage:new Batch({sway:true})},inst=new Map();let forced=null;
-  const set=lx=>forced||(Math.abs(lx)<75?near:far), groundY=(s,lx)=>groundHeight(s,lx,P0);
+  // the ground as it is drawn: exact near the road; further out, between the terrain mesh's points (its
+  // columns there are tens of metres apart, so on a rounded hill the drawn ground is lower than the exact one)
+  const gridH=new Map(),gridAt=(row,ci)=>{const k=row*64+ci;let h=gridH.get(k);if(h===undefined){const ss=start+row*5;h=groundHeight(ss,LXS[ci],terrainParams(ss));gridH.set(k,h);}return h;};
+  const meshY=(s,lx)=>{const f=(s-start)/5,r0=Math.floor(f),tr=f-r0;let ci=0;while(ci<LXS.length-2&&LXS[ci+1]<lx)ci++;
+    const tc=Math.min(1,Math.max(0,(lx-LXS[ci])/(LXS[ci+1]-LXS[ci])));
+    return (gridAt(r0,ci)*(1-tc)+gridAt(r0,ci+1)*tc)*(1-tr)+(gridAt(r0+1,ci)*(1-tc)+gridAt(r0+1,ci+1)*tc)*tr;};
+  const set=lx=>forced||(Math.abs(lx)<75?near:far), groundY=(s,lx)=>Math.abs(lx)<12.5?groundHeight(s,lx,P0):Math.min(groundHeight(s,lx,P0),meshY(s,lx));
   const TE=G.trip?G.trip.end:Infinity;
   const inRiver=(s,lx)=>{const rv=riverAt(s);return rv&&rv.amp>.2&&Math.abs(lx-rv.lat)<rv.w*.5+3;};
   const riverHere=[start,start+40,start+80,start+CH].some(s=>riverAt(s));
@@ -354,9 +360,19 @@ function* chunkBuilder(index){
         if(r()<.5)rock(s+r()*10,side*(60+r()*300),4+r()*10,bio.rockC);
       }else if(b!=='desert'){
         const coastal=b==='coast',conifer=b==='mountain'||snowy,tree=(s,lx,k)=>conifer?(r()<.35?spruce(s,lx,k):pine(s,lx,k)):(b==='fields'||coastal)&&r()<.18?birch(s,lx):(b==='fields'&&r()<.2)?poplar(s,lx):deciduous(s,lx,k,b==='town'&&r()<.14?'#d8a6b4':b==='fields'&&r()<.12?'#8ea64b':null);
-        if(r()<(coastal?.22:.62)){const lx=side*(13+r()*55);tree(s,lx,1);}
-        if(r()<(coastal?.25:.7)){const lx=side*(70+r()*300);(conifer||(b==='town'&&r()<.3))?(r()<.3?spruce(s+r()*6,lx,1.2):pine(s+r()*6,lx,1.2)):deciduous(s+r()*6,lx,1.3);}
-        if(r()<(coastal?.2:.55)){const lx=side*(75+r()*120);conifer?pine(s+6,lx,1.1):deciduous(s+6,lx,1.2);}
+        // trees grow in groves and copses with open meadow between, not dotted evenly: a slow noise says
+        // where the woods are; a grove is a few trees of different sizes close together, with bushes under them
+        const wood=(ss,lx)=>vnoise(ss*.0052+side*7.3,lx*.0061+side*3.1)*.7+vnoise(ss*.019,lx*.021)*.3;
+        const grove=(ss,lx,n,k)=>{for(let q=0;q<n;q++){const ts=ss+(r()-.5)*(6+n*2.2),tl=lx+(r()-.5)*(6+n*2.2);if(Math.abs(tl)<11)continue;tree(ts,tl,k*(.75+r()*.5));}
+          if(!snowy&&!winter&&Math.abs(lx)<75)for(let q=0;q<Math.min(4,n+1);q++){const bs=ss+(r()-.5)*8,bl=lx+(r()-.5)*8;if(Math.abs(bl)<11)continue;const [bx,bz]=L(bs,bl),by=groundY(bs,bl);set(bl).foliage.add(blobT(r,true),M(bx,by+.35,bz,.9+r()*.7,.6+r()*.4,.9+r()*.7,r()*6),bio.treeC.clone().multiplyScalar(.8+r()*.25),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:by,swayH:1});}};
+        {const ss=s+r()*10,lx=side*(13+r()*55),w=wood(ss,lx);if(w>.55&&r()<(coastal?.35:.8))grove(ss,lx,w>.66?3+Math.floor(r()*3):1+Math.floor(r()*2),1);else if(r()<(coastal?.04:.08))tree(ss,lx,1.1);}
+        {const ss=s+r()*6,lx=side*(70+r()*300),w=wood(ss,lx);if(w>.5&&r()<(coastal?.4:.85)){const big=(conifer||(b==='town'&&r()<.3));if(big)for(let q=0;q<2+Math.floor(r()*4);q++){const tl=lx+(r()-.5)*16;r()<.3?spruce(ss+(r()-.5)*14,tl,1.2):pine(ss+(r()-.5)*14,tl,1.2);}else grove(ss,lx,2+Math.floor(r()*4),1.25);}}
+        {const ss=s+6,lx=side*(75+r()*120),w=wood(ss,lx);if(w>.6&&r()<(coastal?.3:.6))conifer?pine(ss,lx,1.1):deciduous(ss,lx,1.2);}
+        // wildflowers in drifts beside the road, in spring and summer
+        if((state.season==='spring'||state.season==='summer')&&!snowy&&(b==='fields'||b==='mountain'||coastal)&&r()<(state.season==='spring'?.75:.55)){
+          const FL=['#f4f1e8','#f2d14c','#f2d14c','#9b7bd1','#e89ab8','#d8433a','#ffffff'],fc=C(FL[Math.floor(r()*FL.length)]),cs=s+r()*12,cl=side*(9+r()*24);
+          for(let q=0;q<14;q++){const a=r()*6.28,rr=Math.sqrt(r())*3.2,fs=cs+Math.cos(a)*rr,fl=cl+Math.sin(a)*rr;if(Math.abs(fl)<8.6)continue;const [fx,fz]=L(fs,fl),fy=groundY(fs,fl)+.32+r()*.18;
+            near.solid.add(sphT(),M(fx,fy,fz,.09+r()*.05,.07,.09+r()*.05),fc.clone().offsetHSL(0,0,(r()-.5)*.08),{ao:.9});}}
         if(!snowy&&!winter)for(let k=0;k<3;k++)tufts(s+r()*12,side*(8.4+r()*6),P0.ground.clone().multiplyScalar(.85+r()*.3),b!=='town');
         if(r()<.3&&!place('shrub',s+r()*10,side*(10+r()*6),1.2+r()*1.2)){const [x,z]=L(s+r()*10,side*(10+r()*5));const y0=groundY(s,side*11);near.foliage.add(blobT(r,true),M(x,y0+.3,z,.6+r()*.4,.45+r()*.25,.6+r()*.4,r()*6),bio.treeC.clone().multiplyScalar(1.15),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:y0,swayH:1.2});}
       }else{

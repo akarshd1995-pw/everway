@@ -91,14 +91,16 @@ const smoothstep = (x, a, b) => { const k = Math.min(1, Math.max(0, (x - a) / (b
 /* ------------------------------------------------------------ the card */
 const card = document.createElement('div'); card.id = 'trip'; card.className = 'tripcard'; card.hidden = true;
 document.body.appendChild(card);
-let cur = null, want = false, signKey = null;
+let cur = null, want = false, signKey = null, answered = false;
+// once you have chosen, the card closes; T still changes your mind
+function decide(v) { want = v; answered = true; card.hidden = true; toast(v ? `Turning off at the brown sign, to ${PLACE[cur.kind]}. (T to change your mind)` : 'Carrying on along the road.'); }
 function showOffer(t) {
   card.innerHTML = `<p class="fork-head">Side road <span>${((t.sp - state.distance) / 1000).toFixed(1)} km</span></p>
     <p class="trip-what">Turn off to ${PLACE[t.kind]}?</p>
     <div class="fork-ways"><button type="button" data-a="go">Turn off</button><button type="button" data-a="stay">Keep going</button></div>
     <p class="fork-hint">Press T to turn off.</p>`;
-  card.querySelector('[data-a="go"]').onclick = () => { want = true; paintOffer(); };
-  card.querySelector('[data-a="stay"]').onclick = () => { want = false; paintOffer(); };
+  card.querySelector('[data-a="go"]').onclick = () => decide(true);
+  card.querySelector('[data-a="stay"]').onclick = () => decide(false);
   paintOffer();
 }
 function paintOffer() { card.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.a === 'go') === want)); }
@@ -109,7 +111,7 @@ function showArrived(t) {
 }
 addEventListener('keydown', e => {
   if (['INPUT', 'SELECT'].includes(document.activeElement.tagName) || e.repeat) return;
-  if (e.key.toLowerCase() === 't') { if (G.trip?.arrived) goBack(); else if (cur && !G.trip) { want = !want; paintOffer(); } }
+  if (e.key.toLowerCase() === 't') { if (G.trip?.arrived) goBack(); else if (cur && !G.trip && state.distance < cur.sp - LOCK) decide(!want); }
 });
 
 /* ------------------------------------------------------------ going and coming back */
@@ -147,12 +149,12 @@ export function updateTrip(dt, run, base, yBase) {
   const L = Math.floor((s + SHOW) / LEG);
   let t = null;
   for (const k of [L - 1, L]) { const c = tripFor(k); if (c && s > c.sp - SHOW && s < c.sp + 40) { t = c; break; } }
-  if (t !== cur) { cur = t; want = false; if (t) showOffer(t); }
+  if (t !== cur) { cur = t; want = false; answered = false; if (t) showOffer(t); }
   if (!t) { card.hidden = true; sign.visible = false; mouth.visible = false; return; }
   if (mouthKey !== t.sp) { mouthKey = t.sp; buildMouth(t); }
   mouth.visible = true; mouth.position.set(mouth.userData.x0 - base, -yBase, s - t.sp);
   if (s > t.sp - LOCK) { card.hidden = true; if (want && s < t.sp) { want = false; turnOff(t); return; } }
-  else { card.hidden = !run; const km = card.querySelector('.fork-head span'); if (km) km.textContent = ((t.sp - s) / 1000).toFixed(1) + ' km'; }
+  else { card.hidden = !run || answered; const km = card.querySelector('.fork-head span'); if (km) km.textContent = ((t.sp - s) / 1000).toFixed(1) + ' km'; }
   if (signKey !== t.sp) { signKey = t.sp; drawSign(t); }
   const ss = t.sp - 170, sl = t.side * (ROAD.half + 2.8);
   sign.visible = s < ss + 40; sign.rotation.y = roadYaw(ss);
