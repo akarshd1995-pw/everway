@@ -39,8 +39,8 @@ function updateIndicators(dt, run) {
 const wipers = new T.Group(); wipers.visible = false; camera.add(wipers); if (!camera.parent) scene.add(camera);
 const bladeM = new T.MeshBasicMaterial({color: '#141819'});
 const blades = [-.2, .17].map(x => { const pivot = new T.Group(); pivot.position.set(x, -.36, -.6);
-  const arm = new T.Mesh(new T.BoxGeometry(.006, .3, .002), bladeM); arm.position.y = .15; pivot.add(arm);
-  const blade = new T.Mesh(new T.BoxGeometry(.012, .34, .003), bladeM); blade.position.set(.008, .2, .001); pivot.add(blade);
+  const arm = new T.Mesh(new T.BoxGeometry(.0025, .26, .002), bladeM); arm.position.y = .13; pivot.add(arm);
+  const blade = new T.Mesh(new T.BoxGeometry(.005, .3, .003), bladeM); blade.position.set(.004, .18, .001); pivot.add(blade);
   wipers.add(pivot); return pivot; });
 let wipeT = 0;
 function updateWipers(dt) {
