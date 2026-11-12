@@ -129,7 +129,7 @@ const ffMat = new T.ShaderMaterial({
   uniforms: {uT: {value: 0}, uK: {value: 0}, uScale: {value: 400}},
   vertexShader: `attribute float aPh;uniform float uT,uScale;varying float vA;
     void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;
-      float b=pow(max(0.,sin(uT*(1.1+fract(aPh*3.7)*.9)+aPh*6.28)),4.);vA=.12+b;gl_PointSize=max(2.,(.3+b*.45)*uScale/max(-mv.z,1.));}`,
+      float b=pow(max(0.,sin(uT*(1.1+fract(aPh*3.7)*.9)+aPh*6.28)),4.);vA=.12+b;gl_PointSize=clamp((.12+b*.2)*uScale/max(-mv.z,1.),2.,9.);}`,
   fragmentShader: `uniform float uK;varying float vA;void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q)*4.;if(r>1.)discard;
     gl_FragColor=vec4(vec3(.85,1.,.35)*(1.6-r),vA*uK*(1.-r));}`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false,
