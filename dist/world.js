@@ -33,6 +33,8 @@ import {keys,totalled,pollPad,rumble} from './engine/ui.js';
 import {frameStart,frameEnd} from './engine/debug.js';
 import {pictureFrameEnd} from './engine/photo.js';
 import {trackDrive} from './engine/progress.js';
+import {updateScreen} from './engine/screen.js';
+import {updateCarReflection} from './engine/carreflect.js';
 
 // where the sun is on screen, and how strongly its light shafts show (low sun, broken cloud, sun ahead)
 const _sv = new T.Vector3();
@@ -98,6 +100,7 @@ function frame(now) {
   cloudU.uOffset.value += dt * ((G.weatherNow === 'windy' ? 9 : 2.5) + state.speed * .04);
   mountains.rotation.y = -base * .00006; mountains.position.y = -yBase;
   wind.time.value = G.elapsed;
+  if (G.player) { wind.car.value.copy(G.player.position); wind.carV.value = Math.min(1, state.speed / 25); }
   wind.amount.value = lerp(wind.amount.value, G.weatherNow === 'windy' ? .32 : G.weatherNow === 'rainy' ? .14 : .05, dt);
   updateLighting(dt);
   { // headlights point where the vehicle points
@@ -119,7 +122,7 @@ function frame(now) {
   if (G.envTimer > 8 || (G.envTimer > 3 && Math.abs(key - G.lastEnvKey) > 1.5)) { G.envTimer = 0; G.lastEnvKey = key; bakeEnvironment(); }
 
   // render
-  if (G.quality.post) { sunRays(); renderReflection(camera, G.lakeLevel, LAKE); post.render(scene, camera, G.quality.bloom ? .24 + nightAmt * .45 : 0, 1.05, G.quality.ao * (.55 + .45 * dayAmt)); }
+  if (G.quality.post) { sunRays(); updateScreen(dt); updateCarReflection(); renderReflection(camera, G.lakeLevel, LAKE); post.render(scene, camera, G.quality.bloom ? .24 + nightAmt * .45 : 0, 1.05, G.quality.ao * (.55 + .45 * dayAmt)); }
   else { renderer.setRenderTarget(null); renderer.render(scene, camera); }
   pictureFrameEnd();
   adaptQuality(dt);

@@ -2,11 +2,11 @@
 // that a coarse grid of the same land reaches to the view distance, re-centred on the player as
 // they drive. Under the detailed sections it is sunk out of sight, so the two never fight.
 import * as T from '../three.module.js';
-import {clamp} from './core.js';
+import {clamp, vnoise} from './core.js';
 import {G, state} from './state.js';
 import {camera, scene} from './render.js';
 import {MAT, wind} from './materials.js';
-import {CH, terrainParams} from './biomes.js';
+import {CH, terrainParams, biomeAt} from './biomes.js';
 import {roadCos, roadHeight, roadX} from './road.js';
 import {groundHeight, groundColor, SEA_LEVEL} from './terrain.js';
 import {builtRange, scheduler} from './chunks.js';
@@ -36,7 +36,7 @@ const spare = [gridGeometry(), gridGeometry()];
 const meshes = spare.map(g => { const m = new T.Mesh(g, MAT.terrain); m.receiveShadow = true; m.visible = false; m.frustumCulled = false; scene.add(m); return m; });
 let front = 0;
 
-const _c = new T.Color();
+const _c = new T.Color(), _w = new T.Color(), canopy = new T.Color();
 /** Builds the far land around (s0, x0) into the hidden buffer, a few rows per step. */
 function* buildFar(s0, x0, covered) {
   const m = meshes[1 - front], g = m.geometry, A = g.attributes, cell = view.radius * 2 / N;
@@ -59,7 +59,9 @@ function* buildFar(s0, x0, covered) {
   }
   // normals and colours from the grid itself (no extra height samples)
   for (let r = 0; r <= N; r++) {
-    const s = ss + view.radius - r * cell, P = terrainParams(s), rx = roadX(s), cs = roadCos(s);
+    const s = ss + view.radius - r * cell, P = terrainParams(s), rx = roadX(s), cs = roadCos(s), bio = biomeAt(s);
+    const woodsHere = bio === 'desert' || bio === 'planet' || bio === 'snow' ? 0 : bio === 'coast' ? .5 : 1;
+    canopy.set(bio === 'mountain' ? '#24402e' : state.season === 'autumn' ? '#5a4a26' : state.season === 'winter' ? '#3b3a33' : '#2c4a28');
     for (let i = 0; i <= N; i++) {
       const v = r * (N + 1) + i, hl = pos[(r * (N + 1) + Math.max(i - 1, 0)) * 3 + 1], hr = pos[(r * (N + 1) + Math.min(i + 1, N)) * 3 + 1];
       const hu = pos[(Math.max(r - 1, 0) * (N + 1) + i) * 3 + 1], hd = pos[(Math.min(r + 1, N) * (N + 1) + i) * 3 + 1];
@@ -67,6 +69,13 @@ function* buildFar(s0, x0, covered) {
       nor[v * 3] = -hx / nl; nor[v * 3 + 1] = 1 / nl; nor[v * 3 + 2] = hs / nl;
       const side = (sx - view.radius + i * cell - rx) * cs;
       groundColor(s, side, h, h - col[v * 3], Math.min(Math.hypot(hx, hs), 2), P, _c, spl, v * 4);
+      // the woods carry on to the horizon: where the groves are (the same noise the near trees use),
+      // distant hillsides are clothed in a dark, slightly mottled canopy
+      if (woodsHere && Math.abs(side) > STRIP * .8 && h > SEA_LEVEL + 2) {
+        const sd = side < 0 ? -1 : 1, w = vnoise(s * .0052 + sd * 7.3, side * .0061 + sd * 3.1) * .7 + vnoise(s * .019, side * .021) * .3;
+        const k = clamp((w - .52) / .14, 0, 1) * (1 - clamp((Math.hypot(hx, hs) - .9) / .6, 0, 1)) * woodsHere;
+        if (k > 0) { const m = .82 + vnoise(s * .09, side * .09) * .36; _c.lerp(_w.copy(canopy).multiplyScalar(m), k * .85); }
+      }
       col[v * 3] = _c.r; col[v * 3 + 1] = _c.g; col[v * 3 + 2] = _c.b;
     }
     if (r % 10 === 9) yield;

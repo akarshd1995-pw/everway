@@ -42,13 +42,16 @@ const blades = [-.2, .17].map(x => { const pivot = new T.Group(); pivot.position
   const arm = new T.Mesh(new T.BoxGeometry(.0025, .26, .002), bladeM); arm.position.y = .13; pivot.add(arm);
   const blade = new T.Mesh(new T.BoxGeometry(.005, .3, .003), bladeM); blade.position.set(.004, .18, .001); pivot.add(blade);
   wipers.add(pivot); return pivot; });
-let wipeT = 0;
+let wipeT = 0, wipeCycle = 2.7;
+/** The wipers now: where they are in their cycle (for the raindrops on the windscreen). */
+export const wiperState = () => ({t: wipeT, sweep: 1.1, cycle: wipeCycle, on: wipers.visible});
 function updateWipers(dt) {
   const rain = G.rainAmt || 0, show = state.cam === 1 && (state.ride === 'car' || state.ride === 'coach') && !G.photo && (rain > .15 || wipeT > 0);
   wipers.visible = show;
   if (!show) { wipeT = 0; return; }
   // a sweep out and back, then a pause that gets shorter the harder it rains
   const sweep = 1.1, pause = Math.max(0, 1.6 - rain * 1.5);
+  wipeCycle = sweep + pause;
   wipeT += dt; if (wipeT > sweep + pause) wipeT = 0;
   const t = Math.min(1, wipeT / sweep), a = Math.sin(Math.PI * t);
   for (const p of blades) p.rotation.z = -1.45 + a * 1.75;   // resting flat along the bottom, sweeping up across the glass

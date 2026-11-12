@@ -10,7 +10,7 @@ let lastPost = null;
 const size = new T.Vector2();
 export function applyQuality() {
   const q = G.quality;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, q.ratio)); renderer.setSize(innerWidth, innerHeight, false);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, q.ratio) * (G.resScale || 1)); renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = q.post ? T.NoToneMapping : T.ACESFilmicToneMapping;
   renderer.getDrawingBufferSize(size);
   if (q.post) post.setSize(size.x, size.y, q.samples); else post.dispose();
@@ -21,11 +21,17 @@ export function applyQuality() {
   lastPost = q.post;
 }
 
-let frames = 0, time = 0;
-export function resetAdaptive() { frames = time = 0; }
+let frames = 0, time = 0, good = 0;
+export function resetAdaptive() { frames = time = good = 0; G.resScale = 1; }
+// Keeping the frame rate steady: first the picture is drawn at a slightly lower resolution (hard to
+// notice, especially in motion), and it comes back up when there is room; only if that is not enough
+// does the whole quality level step down.
 export function adaptQuality(dt) {
-  if (G.qualitySetting !== 'auto' || !state.started || state.paused) return;
-  frames++; time += dt; if (time < 5) return;
-  const fps = frames / time; frames = time = 0;
-  if (fps < 38 && G.quality !== QUALITY.low) { G.quality = G.quality === QUALITY.high ? QUALITY.balanced : QUALITY.low; applyQuality(); toast('Graphics tuned for a smoother ride.'); }
+  if (G.qualitySetting !== 'auto' || !state.started || state.paused || G.photo || G.replay) return;
+  frames++; time += dt; if (time < 2.5) return;
+  const fps = frames / time; frames = time = 0; const r = G.resScale || 1;
+  if (fps < 50 && r > .66) { G.resScale = Math.max(.65, r - .1); good = 0; applyQuality(); return; }
+  if (fps > 58 && r < 1) { if (++good >= 3) { G.resScale = Math.min(1, r + .05); good = 0; applyQuality(); } return; }
+  good = 0;
+  if (fps < 38 && r <= .66 && G.quality !== QUALITY.low) { G.quality = G.quality === QUALITY.high ? QUALITY.balanced : QUALITY.low; G.resScale = 1; applyQuality(); toast('Graphics tuned for a smoother ride.'); }
 }

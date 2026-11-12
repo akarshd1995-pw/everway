@@ -61,7 +61,7 @@ function updateLighting(dt){
   MAT.windows.color.setRGB(.11,.13,.14).lerp(tmpA.setRGB(3.2,2.1,.95),n);MAT.lamps.color.setRGB(.9,.88,.8).lerp(tmpA.setRGB(7,5.2,3),n);MAT.pool.opacity=n*.35;
   G.nightAmt=n;for(const l of headlights){const k=G.beamK||1;l.intensity=n*80*(.8+.2*k*k)+(G.flash||0)*140;l.distance=110+(k-1)*170;l.angle=.42+(k-1)*.1;l.target.position.y=.1+(k-1)*.9;}headGlow.opacity=Math.max(n*.7,(G.flash||0)*.95);tailGlow.opacity=n*.7;
   for(const [c,m] of Object.entries(lampMaterials))m.emissiveIntensity=c==='#f05b3e'||c==='#ed6042'?1.4+n*4:1.6+n*9;
-  wet=lerp(wet,(G.rainAmt||0)>.3?1:0,Math.min(1,dt*((G.rainAmt||0)>.3?.3:.04)*wr));MAT.road.roughness=1-wet*.62;MAT.road.color.setScalar(1-wet*.3);MAT.road.userData.wet.value=wet;MAT.road.userData.lampK.value=wet*n*1.6;MAT.road.envMapIntensity=1+wet*.8;   // the road stays wet for a while after the rain stops
+  wet=lerp(wet,(G.rainAmt||0)>.3?1:0,Math.min(1,dt*((G.rainAmt||0)>.3?.3:.04)*wr));MAT.road.roughness=1-wet*.62;MAT.road.color.setScalar(1-wet*.3);MAT.road.userData.wet.value=wet;MAT.road.userData.rain.value=G.rainAmt||0;MAT.road.userData.lampK.value=wet*n*1.6;MAT.road.envMapIntensity=1+wet*.8;   // the road stays wet for a while after the rain stops
   // grading
   const cu=post.comp.uniforms;cu.exposure.value=1+nightAmt*.45;cu.gain.value.set(1+sunsetAmt*.06,1,1-sunsetAmt*.07).lerp(_nightGain,nightAmt*.8);cu.saturation.value=.9-overcast*.08;
   // a soft, airy look: shadows lifted towards a pale sky blue, a touch brighter by day

@@ -90,7 +90,7 @@ export function addPostcard(name, img) {
 }
 
 /* ---- save and continue */
-const SAVED = ['roadSwitches', 'legPick', 'routeOffset', 'weatherOffset', 'distance', 'odometer', 'ride', 'car', 'paint', 'biome', 'season', 'difficulty', 'time', 'weather', 'traffic', 'mode', 'target', 'damage', 'view'];
+const SAVED = ['roadSwitches', 'legPick', 'routeOffset', 'weatherOffset', 'distance', 'odometer', 'ride', 'car', 'paint', 'biome', 'season', 'difficulty', 'time', 'weather', 'traffic', 'mode', 'target', 'damage', 'view', 'look', 'grain', 'bars', 'flare', 'blur'];
 export function saveJourney() {
   if (!state.started || state.crashed || G.trip) return;   // not saved halfway down a side road
   const s = {seed: roadSeed(), at: Date.now()}; for (const k of SAVED) s[k] = state[k];

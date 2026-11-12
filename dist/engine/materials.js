@@ -4,7 +4,7 @@ import {ASSETS} from './render.js';
 import {canvasTexture,glowTex,roadNormal,roadRough,roadTex,signTex} from './textures.js';
 /* --------------------------------------------------------------- materials */
 
-const wind={time:{value:0},amount:{value:.05},dist:{value:0},base:{value:0}};
+const wind={time:{value:0},amount:{value:.05},dist:{value:0},base:{value:0},car:{value:new T.Vector3(0,-999,0)},carV:{value:0}};
 
 const MAT={
   solid:new T.MeshStandardMaterial({vertexColors:true,roughness:.86}),
@@ -20,7 +20,7 @@ const MAT={
 
 MAT.foliage.onBeforeCompile=sh=>{sh.uniforms.uTime=wind.time;sh.uniforms.uWind=wind.amount;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float sway;uniform float uTime,uWind;')
-  .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat ph=dot(position.xz,vec2(.13,.11));transformed.x+=sin(uTime*1.9+ph)*sway*uWind;transformed.z+=cos(uTime*1.4+ph*1.7)*sway*uWind*.6;');};
+  .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat ph=dot(position.xz,vec2(.13,.11)),gust=.55+1.1*pow(sin(dot(position.xz,vec2(.021,.013))-uTime*.9)*.5+.5,3.);transformed.x+=(sin(uTime*1.9+ph)+.6)*sway*uWind*gust;transformed.z+=cos(uTime*1.4+ph*1.7)*sway*uWind*.6*gust;transformed.y-=sway*uWind*gust*.15;');};
 /* ------------------------------------------- ground materials (PBR splat) */
 // Tileable procedural stand-ins, replaced by Poly Haven scans when they have been downloaded.
 
@@ -43,11 +43,11 @@ for(const k of ['grass','rock','sand','snow']){const a=ASSETS?.textures[k];LAYER
 
 // Road surface: breaks up the repeating texture with slow variation along the road, adds repaired
 // patches and fading paint here and there, and on a wet road pools of water that shine.
-MAT.road.userData.wet={value:0};MAT.road.userData.lamps={value:Array.from({length:16},()=>new T.Vector4())};MAT.road.userData.lampN={value:0};MAT.road.userData.lampK={value:0};
-MAT.road.onBeforeCompile=sh=>{const U=MAT.road.userData;sh.uniforms.uWet=U.wet;sh.uniforms.uLamps=U.lamps;sh.uniforms.uLampN=U.lampN;sh.uniforms.uLampK=U.lampK;
+MAT.road.userData.wet={value:0};MAT.road.userData.lamps={value:Array.from({length:16},()=>new T.Vector4())};MAT.road.userData.lampN={value:0};MAT.road.userData.lampK={value:0};MAT.road.userData.rain={value:0};MAT.road.userData.time=wind.time;
+MAT.road.onBeforeCompile=sh=>{const U=MAT.road.userData;sh.uniforms.uWet=U.wet;sh.uniforms.uLamps=U.lamps;sh.uniforms.uLampN=U.lampN;sh.uniforms.uLampK=U.lampK;sh.uniforms.uRainNow=U.rain;sh.uniforms.uTime=U.time;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vRW;').replace('#include <project_vertex>','#include <project_vertex>\nvRW=(modelMatrix*vec4(transformed,1.)).xyz;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-uniform float uWet,uLampN,uLampK;uniform vec4 uLamps[16];varying vec3 vRW;
+uniform float uWet,uLampN,uLampK,uRainNow,uTime;uniform vec4 uLamps[16];varying vec3 vRW;
 float rh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float rn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(rh(i),rh(i+vec2(1.,0.)),f.x),mix(rh(i+vec2(0.,1.)),rh(i+1.),f.x),f.y);}
 float puddle;`)
@@ -69,6 +69,12 @@ float puddle;`)
     puddle=uWet*asphalt*smoothstep(.62,.78,rn(vec2(q.y*.9+3.,q.x*6.)));
     diffuseColor.rgb*=1.-puddle*.35; }`)
   .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.04,puddle);')
+  // raindrops landing in the puddles: little rings that spread and fade
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+  if(puddle>.05&&uRainNow>.05){vec2 g=vRW.xz*2.2,id=floor(g);vec2 rip=vec2(0.);
+    for(int j=0;j<4;j++){vec2 o=vec2(float(j/2),float(j-j/2*2))-.5;vec2 c=id+o+vec2(rh(id+o),rh(id+o+4.1));float ph=fract(uTime*.9+rh(id+o+2.3));
+      vec2 d=g-c;float l=length(d),w=sin((l-ph*.75)*38.)*exp(-pow((l-ph*.75)*7.,2.))*(1.-ph);rip+=d/max(l,.01)*w;}
+    normal=normalize(normal+vec3(rip.x,0.,rip.y)*.35*puddle*uRainNow);}`)
   // at night on a wet road, each street lamp is reflected as a long, wavering streak towards you
   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
   if(uLampN>.5){vec3 acc=vec3(0.);vec3 C=cameraPosition;
@@ -88,7 +94,9 @@ float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hh(i)
 varying vec3 vWP,vWN;vec2 oA,oB;float kb;
 vec3 st(sampler2D t,vec2 u){vec2 dx=dFdx(u),dy=dFdy(u);return mix(textureGrad(t,u+oA,dx,dy).rgb,textureGrad(t,u+oB,dx,dy).rgb,kb);}
 vec3 layers(vec2 b,vec4 sw){vec3 x=vec3(0.);if(sw.x>.01)x+=st(tG,b*2.)*sw.x;if(sw.y>.01)x+=st(tR,b)*sw.y;if(sw.z>.01)x+=st(tS,b*2.)*sw.z;if(sw.w>.01)x+=st(tW,b)*sw.w;return x;}`)
-  .replace('#include <map_fragment>',`vec4 sw=vSplat/max(dot(vSplat,vec4(1.)),1e-3);vec2 uG=vMapUv*2.,uR=vMapUv,uS=vMapUv*2.,uW=vMapUv,uM=vMapUv*.25;
+  .replace('#include <map_fragment>',`vec4 sw=vSplat/max(dot(vSplat,vec4(1.)),1e-3);
+    // steep ground shows bare rock (cuttings, crags, cliff faces), with a little grass clinging on
+    {float stp=smoothstep(.8,.55,normalize(vWN).y)*(.75+.25*vn(vMapUv*.3));sw=mix(sw,vec4(sw.x*.15,1.,0.,sw.w*.4),stp*.85);sw/=max(dot(sw,vec4(1.)),1e-3);}vec2 uG=vMapUv*2.,uR=vMapUv,uS=vMapUv*2.,uW=vMapUv,uM=vMapUv*.25;
     float kN=vn(vMapUv*.05)*8.,ki=floor(kN);oA=sin(vec2(3.,7.)*ki);oB=sin(vec2(3.,7.)*(ki+1.));kb=smoothstep(.2,.8,fract(kN));
     // steep cuttings and cliffs are textured from the side, so the pattern is not stretched
     vec3 wn=normalize(vWN);float side=smoothstep(.8,.55,wn.y);
@@ -98,7 +106,9 @@ vec3 layers(vec2 b,vec4 sw){vec3 x=vec3(0.);if(sw.x>.01)x+=st(tG,b*2.)*sw.x;if(s
     tex=mix(tex,macro,.3);
     // patches of bare soil through the grass
     float soil=smoothstep(.58,.82,vn(vMapUv*.021+3.7))*sw.x*.5;
-    diffuseColor.rgb*=mix(tex,tex*vec3(.84,.72,.58),soil);`)
+    diffuseColor.rgb*=mix(tex,tex*vec3(.84,.72,.58),soil);
+    // fine detail close to the camera: small clumps and stones break up the ground near the road
+    {float near=1.-smoothstep(8.,45.,length(vViewPosition));diffuseColor.rgb*=1.+near*(vn(vMapUv*9.)-.5)*.32+near*(vn(vMapUv*31.)-.5)*.18;}`)
   .replace('#include <color_fragment>','vec3 ref=uRefG*sw.x+uRefR*sw.y+uRefS*sw.z+uRefW*sw.w;diffuseColor.rgb*=mix(vec3(1.),clamp(vColor.rgb/max(ref,vec3(.01)),.25,2.5),.75);')
   .replace('#include <roughnessmap_fragment>','float roughnessFactor=dot(sw,vec4(.96,.82,.9,.55));')
   .replace('#include <normal_fragment_maps>','vec3 mapN=vec3(.5,.5,1.)*0.;if(sw.x>.01)mapN+=st(nG,uG)*sw.x;if(sw.y>.01)mapN+=st(nR,uR)*sw.y;if(sw.z>.01)mapN+=st(nS,uS)*sw.z;if(sw.w>.01)mapN+=st(nW,uW)*sw.w;mapN=mapN/max(sw.x*step(.01,sw.x)+sw.y*step(.01,sw.y)+sw.z*step(.01,sw.z)+sw.w*step(.01,sw.w),1e-3)*2.-1.;mapN.xy*=normalScale;normal=normalize(tbn*mapN);');};
@@ -109,13 +119,16 @@ const bladeGeo=(()=>{const g=new T.BufferGeometry(),w=.028,p=[-w,0,0,w,0,0,-w*.7
 
 MAT.grass=new T.MeshStandardMaterial({vertexColors:true,roughness:.85,side:T.DoubleSide});
 
-MAT.grass.onBeforeCompile=sh=>{sh.uniforms.uTime=wind.time;sh.uniforms.uWind=wind.amount;sh.uniforms.uDist=wind.dist;sh.uniforms.uBase=wind.base;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime,uWind,uDist,uBase;varying float vGust;')
+MAT.grass.onBeforeCompile=sh=>{sh.uniforms.uTime=wind.time;sh.uniforms.uWind=wind.amount;sh.uniforms.uDist=wind.dist;sh.uniforms.uBase=wind.base;sh.uniforms.uCar=wind.car;sh.uniforms.uCarV=wind.carV;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime,uWind,uDist,uBase,uCarV;uniform vec3 uCar;varying float vGust;')
   .replace('#include <begin_vertex>',`#include <begin_vertex>
 vec2 gp=vec2(instanceMatrix[3].x,instanceMatrix[3].z);float bend=position.y*position.y;transformed.x+=sin(uTime*2.2+gp.x*.35+gp.y*.2)*bend*(.07+uWind*1.5);transformed.z+=cos(uTime*1.7+gp.x*.2+gp.y*.3)*bend*(.04+uWind);
   // gusts: broad waves that roll across the grass, bending it and showing its paler side
   vec4 wq=modelMatrix*vec4(gp.x,0.,gp.y,1.);vec2 jp=vec2(wq.x+uBase,uDist-wq.z);
   float wave=pow(sin(dot(jp,vec2(.05,.032))-uTime*1.8+sin(jp.y*.011)*2.)*.5+.5,3.)*(.5+uWind*4.);
-  transformed.x+=bend*wave*.3;transformed.z+=bend*wave*.18;vGust=wave*clamp(position.y,0.,1.);`);
+  transformed.x+=bend*wave*.3;transformed.z+=bend*wave*.18;vGust=wave*clamp(position.y,0.,1.);
+  // the car brushes the verge: blades close to it lean away, more the faster it goes
+  {vec2 dc=wq.xz-uCar.xz;float dl=length(dc),push=(1.-smoothstep(1.6,3.4,dl))*step(abs(wq.y-uCar.y),3.)*(.5+uCarV);
+   vec3 away=vec3(dc.x,0.,dc.y)/max(dl,.2);vec3 loc=(inverse(mat3(modelMatrix)*mat3(instanceMatrix))*away);transformed.xz+=loc.xz*bend*push*.55;transformed.y-=bend*push*.18;}`);
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vGust;').replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb*=1.+vGust*.28;');};
 
 // Cloud shadows: soft patches of shade drift across the land with the wind, as the clouds pass over.

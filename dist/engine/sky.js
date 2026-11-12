@@ -8,11 +8,30 @@ import {G} from './state.js';
 
 const SKY_FS=`uniform vec3 uZenith,uHorizon,uGround,uSunDir,uSunCol,uMoonDir;uniform float uNight,uTime,uDisk,uOvercast,uGlow,uAlien;varying vec3 vDir;
 float hash(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2(1,0)),f.x),mix(h2(i+vec2(0,1)),h2(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*vn(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return s;}
 void main(){vec3 d=normalize(vDir);float h=d.y;
   vec3 col=mix(uHorizon,uZenith,pow(clamp(h,0.,1.),.5));col=mix(col,uGround,smoothstep(0.,-.2,h));
   float sd=dot(d,uSunDir),sp=max(sd,0.),above=smoothstep(-.06,.02,h),clear=1.-uOvercast*.8,stars=1.-smoothstep(.25,.7,uOvercast),band=1.-smoothstep(0.,.5,abs(h));
   col+=uSunCol*(pow(sp,7.)*.3+pow(sp,48.)*.55+pow(sp,3.)*band*.22)*uGlow*clear*above;
   col+=uSunCol*smoothstep(.99935,.99962,sd)*uDisk*clear*above;
+  // light scattered through a long path of air: near sunrise and sunset the horizon on the sun's side
+  // glows warm, the far side shows a pink band over the blue shadow of the earth, and the zenith deepens
+  float low=smoothstep(.45,.0,uSunDir.y)*smoothstep(-.2,-.02,uSunDir.y),az=dot(normalize(d.xz+1e-4),normalize(uSunDir.xz+1e-4))*.5+.5;
+  col+=vec3(1.,.55,.28)*low*pow(az,3.)*band*(1.-uOvercast)*.55*smoothstep(-.05,.05,h);
+  float anti=pow(1.-az,2.),dusk=smoothstep(.12,-.02,uSunDir.y)*smoothstep(-.22,-.06,uSunDir.y);
+  col=mix(col,vec3(.86,.6,.66),dusk*anti*smoothstep(.02,.07,h)*smoothstep(.22,.1,h)*.55*(1.-uOvercast));
+  col=mix(col,vec3(.16,.22,.38),dusk*anti*smoothstep(.04,0.,h)*smoothstep(-.02,0.,h)*.5*(1.-uOvercast));
+  col*=1.-low*.18*smoothstep(.3,1.,h);
+  // a high, thin layer of cloud (cirrus and mackerel sky) drifting with the wind, lit by the sun and
+  // set on fire at sunset; thicker as the weather turns
+  if(h>.015){vec2 q=d.xz/(h+.08)*1.6+vec2(uTime*.004,uTime*.0015);
+    float n=fbm(q*1.3+vec2(fbm(q*.35)*1.8,0.)),streak=fbm(vec2(q.x*2.6,q.y*.55)+3.1);
+    float cov=mix(.62,.38,uOvercast),c=smoothstep(cov,cov+.3,n*.65+streak*.45)*smoothstep(.015,.15,h)*(1.-smoothstep(.6,.95,uOvercast));
+    vec3 lit=mix(vec3(1.),vec3(1.,.62,.42),low)*(.35+.65*max(uSunCol.r,.0)+.02)+pow(sp,6.)*uSunCol*.8;
+    vec3 cc=mix(col*1.05+.06,lit,.55)*(1.-uNight*.85)+vec3(.05,.06,.09)*uNight;
+    col=mix(col,cc,c*.55);}
   // another world: two big moons hang in the sky by day and night
   if(uAlien>.01){vec3 m1=normalize(vec3(-.55,.32,-.77)),m2=normalize(vec3(.42,.2,-.88));
     float a1=dot(d,m1),a2=dot(d,m2),lit=.55+.45*uNight;

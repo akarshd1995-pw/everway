@@ -317,3 +317,5 @@ body.bare .tripcard,body.replaying .tripcard{opacity:0;pointer-events:none}
 .paints{display:flex;flex-wrap:wrap;gap:8px}
 .paints button{width:28px;height:28px;border-radius:50%;border:0;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);cursor:pointer}
 .paints button.active{box-shadow:0 0 0 3px var(--amber),inset 0 0 0 2px rgba(255,255,255,.6)}
+#look{flex-wrap:wrap}
+#look button{flex:1 1 40%}

@@ -18,7 +18,7 @@ const maxAniso=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 
 const QUALITY={
   high:{label:'HIGH',ratio:1.5,post:true,bloom:true,shadow:4096,samples:4,ao:1,hi:340,grass:240},
-  balanced:{label:'BALANCED',ratio:1.15,post:true,bloom:true,shadow:2048,samples:2,ao:.85,hi:200,grass:150},
+  balanced:{label:'BALANCED',ratio:1.15,post:true,bloom:true,shadow:2048,samples:4,ao:.85,hi:200,grass:150},
   low:{label:'PERFORMANCE',ratio:1,post:false,bloom:false,shadow:1024,samples:0,ao:0,hi:0,grass:0}};
 
 G.qualitySetting=params.get('quality')||'auto';G.quality=QUALITY[G.qualitySetting==='auto'?'high':G.qualitySetting]||QUALITY.high;
