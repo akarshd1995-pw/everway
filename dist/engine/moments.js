@@ -123,30 +123,30 @@ const mist = {
 };
 
 /* ================================================================ fireflies on summer nights */
-const FF = 220, ffPos = new Float32Array(FF * 3), ffPh = new Float32Array(FF);
+const FF = 320, ffPos = new Float32Array(FF * 3), ffPh = new Float32Array(FF);
 const ffGeo = new T.BufferGeometry(); ffGeo.setAttribute('position', new T.BufferAttribute(ffPos, 3)); ffGeo.setAttribute('aPh', new T.BufferAttribute(ffPh, 1));
 const ffMat = new T.ShaderMaterial({
   uniforms: {uT: {value: 0}, uK: {value: 0}, uScale: {value: 400}},
   vertexShader: `attribute float aPh;uniform float uT,uScale;varying float vA;
     void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;
-      float b=pow(max(0.,sin(uT*(1.1+fract(aPh*3.7)*.9)+aPh*6.28)),10.);vA=b;gl_PointSize=(.22+b*.25)*uScale/max(-mv.z,1.);}`,
+      float b=pow(max(0.,sin(uT*(1.1+fract(aPh*3.7)*.9)+aPh*6.28)),4.);vA=.12+b;gl_PointSize=max(2.,(.3+b*.45)*uScale/max(-mv.z,1.));}`,
   fragmentShader: `uniform float uK;varying float vA;void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q)*4.;if(r>1.)discard;
     gl_FragColor=vec4(vec3(.85,1.,.35)*(1.6-r),vA*uK*(1.-r));}`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false,
 });
 const ffPts = new T.Points(ffGeo, ffMat); ffPts.visible = false; ffPts.frustumCulled = false; scene.add(ffPts);
 const flies = Array.from({length: FF}, () => ({s: 0, lx: 0, h: 0, g: 0, ph: Math.random() * 100}));
-function seatFly(f, s0, s1) { f.s = rnd(s0, s1); f.lx = (Math.random() < .5 ? -1 : 1) * rnd(5.5, 38); f.g = ground(f.s, f.lx); f.h = rnd(.4, 2.6); }
+function seatFly(f, s0, s1) { f.s = rnd(s0, s1); f.lx = (Math.random() < .5 ? -1 : 1) * rnd(5.5, 26); f.g = ground(f.s, f.lx); f.h = rnd(.4, 2.6); }
 const fireflies = {
   name: 'fireflies', gap: 500,
   can() { const h = hour(), b = biomeAt(state.distance); return (state.season === 'summer' || state.season === 'spring' && h > 22) && (h > 21.3 || h < 1.5) && (b === 'fields' || b === 'coast' || b === 'town') && G.weatherNow !== 'rainy' && G.weatherNow !== 'windy'; },
-  start() { this.t = 0; this.life = rnd(140, 220); this.k = 0; const d = state.distance; for (const f of flies) seatFly(f, d - 10, d + 160); ffPts.visible = true; return 'Fireflies in the verges.'; },
+  start() { this.t = 0; this.life = rnd(140, 220); this.k = 0; const d = state.distance; for (const f of flies) seatFly(f, d - 10, d + 130); ffPts.visible = true; return 'Fireflies in the verges.'; },
   update(dt) {
     this.t += dt; const d = state.distance, going = this.t < this.life && nightAmt > .55 && G.weatherNow !== 'rainy';
     this.k += ((going ? 1 : 0) - this.k) * Math.min(1, dt * .4);
     const tt = G.elapsed;
     flies.forEach((f, i) => {
-      if (f.s < d - 15) seatFly(f, d + 90, d + 170);
+      if (f.s < d - 15) seatFly(f, d + 80, d + 140);
       at(f.s + Math.sin(tt * .3 + f.ph) * 2, f.lx + Math.sin(tt * .23 + f.ph * 2) * 1.5, f.g + f.h + Math.sin(tt * .5 + f.ph) * .4, _v);
       ffPos[i * 3] = _v.x; ffPos[i * 3 + 1] = _v.y; ffPos[i * 3 + 2] = _v.z; ffPh[i] = f.ph;
     });
