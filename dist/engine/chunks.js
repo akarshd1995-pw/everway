@@ -713,7 +713,10 @@ const FLOWER_CAP=1500,flowerGeo=new T.OctahedronGeometry(.07,0),flowerMat=new T.
 const FLOWERS={spring:['#f2d36b','#f6f3e8','#b79be0','#e27c63','#f3a5c0','#f2d36b'],summer:['#f2d36b','#f4f1e6','#a98ad3','#df6a52'],autumn:['#d9b45a','#c98b4a'],winter:['#ffffff']};
 // Road sections: built ahead by the scheduler, recycled behind.
 const chunks=[],have=new Set(),scheduler=new Scheduler(5),AHEAD=11,BEHIND=2;
-const addChunk=c=>{chunks.push(c);have.add(c.userData.index);setObstacles(c.userData.index,c.userData.obstacles||[]);};
+const addChunk=c=>{const k=c.userData.index;
+  // a section rebuilt after the road changed replaces the old one only now, so nothing ever goes missing
+  for(let i=chunks.length-1;i>=0;i--)if(chunks[i].userData.index===k&&chunks[i].userData.stale){clearObstacles(k);recycle(chunks[i]);chunks.splice(i,1);}
+  chunks.push(c);have.add(k);setObstacles(k,c.userData.obstacles||[]);};
 
 /** Distance range covered by built sections around the player (the far land hides under it). */
 function builtRange(idx){let a=idx,b=idx;while(have.has(a-1))a--;while(have.has(b+1))b++;return have.has(idx)?[a*CH,(b+1)*CH]:null;}
@@ -742,11 +745,14 @@ function updateChunks(distance,base,yBase=0){wind.dist.value=distance;wind.base.
  * (they are far ahead, so the change is not seen). Sections still being built are dropped when done. */
 let VER=0,STALE=1e9;
 function refreshFrom(s){VER++;STALE=Math.floor(s/CH);
-  for(let i=chunks.length-1;i>=0;i--)if(chunks[i].userData.index>=STALE){disposeChunk(chunks[i]);chunks.splice(i,1);}
+  // the old sections stay on screen until their replacements are ready (nearest first)
+  for(const c of chunks)if(c.userData.index>=STALE&&!c.userData.stale){c.userData.stale=true;have.delete(c.userData.index);}
   G.lastIndex=-999;}
 /** Rebuild every section around `distance` at once (scenery, road or difficulty changed, or a jump). Unfinished jobs are completed and recycled so nothing leaks. */
-function rebuild(distance){scheduler.jobs.delete('far');scheduler.drain(c=>{have.delete(c.userData.index);recycle(c);});
+function rebuild(distance,near=false){scheduler.jobs.delete('far');scheduler.drain(c=>{have.delete(c.userData.index);recycle(c);});
   for(const c of chunks)disposeChunk(c);chunks.length=0;const idx=Math.floor(distance/CH);G.lastIndex=idx;
+  // near: only the sections right around you now, the rest are built over the next frames (a shorter pause)
+  if(near){for(let k=idx-1;k<=idx+1;k++)addChunk(makeChunk(k));G.lastIndex=-999;return;}
   for(let k=idx-BEHIND;k<=idx+AHEAD;k++)addChunk(makeChunk(k));}
 
 /** The village near distance s (where cars pull in to stop), or null. Same rule as the sections use. */

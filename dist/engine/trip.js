@@ -128,7 +128,7 @@ function goBack() {
   setTimeout(() => {
     restoreRoad(t.plan); G.trip = null; card.hidden = true; clearReplay();
     state.distance = t.sp + 30; resetVehicle(6);
-    rebuild(state.distance); refreshFar();
+    rebuild(state.distance, true); refreshFar();
     veil.classList.remove('on'); toast('Back on the main road.');
   }, 650);
 }
