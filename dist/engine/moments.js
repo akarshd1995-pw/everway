@@ -412,6 +412,7 @@ export function updateMoments(dt, run, base, yBase) {
 export function momentFocus() {
   const m = active[active.length - 1]; if (!m) return null;
   const p = m === balloon ? balloonM.position : m === horses ? m.list[0].m.position : m === rainbow ? bow.position : m === starlings ? new T.Vector3(sbPos[0], sbPos[1], sbPos[2])
+    : m === meteors ? (s => s && s.p.clone().addScaledVector(s.v, s.t).normalize().multiplyScalar(MET_D).add(camera.position))(streaks.find(x => x.t < x.life * .6 && x.t > .1))
     : m === northern ? new T.Vector3(-Math.sin(aurora.rotation.y) * 2000, 400, -Math.cos(aurora.rotation.y) * 2000).add(camera.position) : null;
   return p && [p.x, p.y, p.z];
 }
