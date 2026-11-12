@@ -9,6 +9,7 @@
 //    crickets and owls at night, surf on the coast's side, gulls, a stream under bridges, wind gusts.
 //  - Music: calm generated tracks whose key, chords, pace and instruments follow the time of day
 //    and the place, crossfading as they change.
+import {carById} from './garage.js';
 import {G, state} from './state.js';
 import {biomeAt} from './biomes.js';
 import {handling} from './physics.js';
@@ -142,8 +143,15 @@ export function updateAudio(run, dt = 1 / 60) {
 }
 
 function engine(run, v, dt) {
-  const E = ENGINE[state.ride], n = nodes.eng;
+  const E = state.ride === 'car' ? {...ENGINE.car, ...carById(state.car).sound} : ENGINE[state.ride], n = nodes.eng;
   if (!E) { set(n.out.gain, 0); set(n.whine.gain, 0); bicycle(v, dt); return; }
+  if (E.ev) {
+    // an electric motor: no engine note, a rising whine that swells as you press on
+    const load = run ? clamp((state.lon || 0) / handling().accel, 0, 1) : 0;
+    set(n.out.gain, 0); set(n.intake.gain.gain, 0); set(n.clatter.gain.gain, 0);
+    set(n.whineO.frequency, 140 + v * 34, .05); set(n.whine.gain, E.whine * clamp(v / 12, .05, 1) * (.25 + load * .9), .15);
+    return;
+  }
   const gear = Math.max(1, state.gear || 1), r = run ? state.rev || 0 : 0, moving = v > .6;
   const target = moving ? E.idle + (E.red - E.idle) * (gear === 1 ? r * .8 : .32 + r * .68) : E.idle * (1 + Math.max(0, state.lon || 0) * .1);
   if (gear > n.gear) n.dip = .16;                 // a gear change: a short lift, then the revs drop

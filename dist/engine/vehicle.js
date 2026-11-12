@@ -25,7 +25,7 @@ export function updatePlayer(dt, run, keys, yBase) {
   // bumps off the tarmac, a jolt on landing or hitting a barrier
   // suspension: the body rides on springs. It squats when you accelerate, dives when you brake, leans
   // out in bends, bounces over rough ground and compresses when it lands.
-  const S = susp, k = h.lean ? 0 : 1, soft = state.ride === 'coach' ? 1.5 : state.ride === 'car' ? 1 : .6, v = state.speed;
+  const S = susp, k = h.lean ? 0 : 1, soft = state.ride === 'coach' ? 1.5 : state.ride === 'car' ? (h.soft || 1) : .6, v = state.speed;
   const surf = state.airborne ? 0 : state.offroad > 0 ? 1 : Math.abs(state.side) > ROAD.half - .3 ? .45 : .06 + (G.trip ? .1 : 0);
   const bump = surf * Math.min(1, v / 12) * (Math.sin(G.elapsed * 17.3 + s * .7) * .6 + Math.sin(G.elapsed * 29.1 + s * 1.3) * .4);
   const land = state.hit > .5 && !S.landed ? (S.landed = true, -state.hit * .12) : (state.hit < .2 ? (S.landed = false, 0) : 0);

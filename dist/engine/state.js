@@ -1,5 +1,5 @@
 
-const state={map:'compass',traffic:'none',season:'summer',view:'medium',difficulty:'normal',odometer:0,steer:0,started:false,paused:false,distance:0,speed:0,target:65,offset:0,ride:'car',mode:'cruise',time:16.5,autoTime:true,weather:'auto',biome:'auto',cam:0,sound:false};
+const state={map:'compass',traffic:'none',season:'summer',view:'medium',difficulty:'normal',odometer:0,steer:0,started:false,paused:false,distance:0,speed:0,target:65,offset:0,ride:'car',car:'meridian',paint:null,mode:'cruise',time:16.5,autoTime:true,weather:'auto',biome:'auto',cam:0,sound:false};
 // Every journey starts somewhere new: a random road (seed), a random place on the route, random
 // weather and a random time of day. ?seed=… picks a road; ?debug keeps tests repeatable.
 const _q=new URLSearchParams(location.search),_fixed=_q.has('debug')&&!_q.has('random');

@@ -3,6 +3,7 @@
 // the road (side), a speed along its heading, and a height that follows the ground or flies.
 // Steering uses a simple bicycle model with a grip limit; the only things you can hit are the
 // barriers beside the road, found by distance from the centre line. Leaving the road is allowed.
+import {carById} from './garage.js';
 import {clamp, lerp} from './core.js';
 import {G, state} from './state.js';
 import {ROAD, roadCos, roadCurvature, roadGrade, roadSurface} from './road.js';
@@ -22,12 +23,18 @@ export const HANDLING = {
   coach: {length: 11.4, label: 'Coach',     accel: 1.5, brake: 5.5, top: 29, wheelbase: 6.2, grip: .8,   steer: .62, steerSpeed: 7,  roll: .07,  lean: false, width: 1.3, cam: {dist: 17, height: 5.6, eye: 2.55}},
   cycle: {length: 1.9, label: 'Bicycle',   accel: 1.3, brake: 5,   top: 12, wheelbase: 1.05, grip: .9,  steer: .55, steerSpeed: 10, roll: 0,    lean: true,  width: .4,  cam: {dist: 5.5, height: 2.4, eye: 2.1}},
 };
-export const handling = () => HANDLING[state.ride] || HANDLING.car;
+const carCache = {};
+/** The handling of the ride you are on (for a car: the car chosen in the garage). */
+export const handling = () => {
+  if (state.ride !== 'car') return HANDLING[state.ride] || HANDLING.car;
+  const id = state.car || 'meridian';
+  return carCache[id] || (carCache[id] = {...HANDLING.car, label: carById(id).name, ...carById(id).h});
+};
 /** Gear change speeds (m/s) per ride; the bicycle has none. */
 export const GEARS = {car: [0, 9, 16, 24, 33, 47], bike: [0, 8, 15, 23, 32, 45], coach: [0, 5, 10, 16, 22, 30]};
 /** Automatic gearbox: sets state.gear and state.rev (0..1 within the gear). */
 function gearbox(v) {
-  const g = GEARS[state.ride];
+  const g = state.ride === 'car' ? carById(state.car).gearList : GEARS[state.ride];
   if (!g) { state.gear = 0; state.rev = 0; return; }
   let gear = 1; while (gear < g.length - 1 && v > g[gear]) gear++;
   const lo = g[gear - 1], hi = g[gear];
@@ -49,11 +56,13 @@ export function resetVehicle(speed = state.speed) {
 function gripNow(h) {
   const w = G.weatherNow, s = state.distance, side = Math.abs(state.side ?? 0);
   // the surface: tarmac, loose gravel on the shoulder, grass off the road, and now and then a patch of ice in winter
-  const surface = state.offroad > 0 ? .68 : side > ROAD.half - .2 ? .82 : 1;
+  // cars built for rough roads (all-wheel drive, chunky tyres) lose less grip on loose ground, snow and ice
+  const ar = h.allRoad || 0;
+  const surface = state.offroad > 0 ? .68 + .27 * ar : side > ROAD.half - .2 ? .82 + .15 * ar : 1;
   const cold = w === 'snowy' || state.season === 'winter' || biomeAt(s) === 'snow';
-  const ice = cold && hash2(Math.floor(s / 35), 41) < .1 ? .55 : 1;
+  const ice = cold && hash2(Math.floor(s / 35), 41) < .1 ? .55 + .25 * ar : 1;
   state.ice = ice < 1;
-  return h.grip * (w === 'rainy' ? .72 : cold ? .55 : 1) * surface * ice;
+  return h.grip * (w === 'rainy' ? .72 + .1 * ar : cold ? .55 + .25 * ar : 1) * surface * ice;
 }
 
 /** Autodrive: follow the lane, slow for bends ahead, and overtake slow vehicles when the way is clear.

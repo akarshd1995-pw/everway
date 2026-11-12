@@ -40,6 +40,12 @@
       <button data-value="coach"><svg class="pic"><use href="#i-coach"/></svg>Coach</button>
       <button data-value="cycle"><svg class="pic"><use href="#i-bike"/></svg>Bicycle</button>
     </div>
+    <div id="garagebox">
+      <h3>Garage</h3>
+      <div class="garage" id="garage" role="listbox" aria-label="Choose a car"></div>
+      <h3>Paint</h3>
+      <div class="paints" id="paints" role="radiogroup" aria-label="Paint colour"></div>
+    </div>
     <h3>Place</h3>
     <div class="places" id="biome">
       <button data-value="auto" class="active" style="--sky:#bcd7d9;--far:#7f9b8d;--near:#6c9a54;--alt:#d7b06a"><i></i>Let the road decide</button>
@@ -85,7 +91,7 @@
     <h3>Who drives</h3>
     <div class="seg" id="modes"><button data-value="cruise" class="active">Autodrive</button><button data-value="manual">I’ll drive</button></div>
     <h3>Cruising speed</h3>
-    <input id="speed" type="range" min="12" max="110" value="65" aria-label="Cruising speed">
+    <input id="speed" type="range" min="12" max="200" value="65" aria-label="Cruising speed">
     <h3>Traffic</h3>
     <div class="seg" id="traffic"><button data-value="none" class="active">None</button><button data-value="light">Light</button><button data-value="busy">Busy</button></div>
     <h3>Sound</h3>

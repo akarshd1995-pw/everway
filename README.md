@@ -70,6 +70,27 @@ Also new in v3, with or without the download:
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
 
+## Version 3.18: the garage
+Eleven cars to choose from (Settings, Trip, Ride: Car), each with its own body, engine note and feel on the road. The names are our own; each is modelled on a kind of car you can buy today, with performance in the range of the real thing.
+
+| Car | Kind | Top speed | Character |
+|---|---|---|---|
+| Meridian | Touring coupé | 238 km/h | Balanced and easy |
+| Kestrel R | Hot hatch | 241 km/h | Eager, darty steering |
+| Linden | Family saloon | 209 km/h | Soft and quiet |
+| Solace | Electric saloon | 248 km/h | Silent, instant pick-up, one gear |
+| Ridgeback | SUV | 209 km/h | Tall and soft, keeps its grip on rough ground |
+| Halcyon | Classic roadster | 187 km/h | Wire wheels, gentle and old-fashioned |
+| Ironside V8 | Muscle car | 284 km/h | Big V8, loose tail |
+| Brisa GT | Grand tourer | 317 km/h | Long-legged V12, refined |
+| Dustrunner | Rally hatch | 227 km/h | All-wheel drive, quick steering, best on gravel and snow |
+| Vanta | Supercar | 328 km/h | Mid-engined V10, razor sharp |
+| Seraph | Hypercar | 349 km/h | Huge grip, tall wing, V12 howl |
+
+- Each car has its own acceleration, braking, top speed, tyre grip, steering speed, body roll, suspension softness and gearbox, and its own engine sound (cylinders, rev range, tone). The electric car hums instead.
+- Choose a paint colour for any car. Your car and colour are kept with your journey.
+- The cruising speed for autodrive now goes up to 200 km/h.
+
 ## Version 3.17: rare moments, and safer overtaking
 Small surprises that reward a long drive. Each happens only now and then, when the time, place, season and weather suit it, with a few minutes of ordinary road between any two. A quiet word says where to look.
 - A rainbow opposite the sun when the rain stops (with a faint second bow), while the sun is low enough to lift it above the hills.

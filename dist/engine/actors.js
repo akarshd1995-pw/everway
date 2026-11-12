@@ -1,9 +1,10 @@
+import {carById} from './garage.js';
 import * as T from '../three.module.js';
 import {createVehicle} from '../vehicles.js';
 import {buildCoach,buildTractor,addCaravan} from './coach.js';
 import {scene,ASSETS} from './render.js';
 import {canvasTexture,flakeTex,glowTex} from './textures.js';
-import {G} from './state.js';
+import {G, state} from './state.js';
 /* ------------------------------------------------------- lights & effects */
 
 const hemi=new T.HemisphereLight(0xd7eafb,0x5d6240,1.6),sun=new T.DirectionalLight(0xffe4b0,3);
@@ -43,12 +44,12 @@ function addGlows(v){const car=v.userData.type==='car',lp=v.userData.lampPos,hea
 const makeVehicle=(type,color,driver,style)=>{const v=type==='coach'?buildCoach():createVehicle(type,color,driver,{compact:true,style});addGlows(v);return v;};
 
 // the player's car: a modern coupé with tinted glass (other rides use their own models)
-const makePlayer=ride=>ride==='car'?makeVehicle('car','#2f5d86',false,'coupe'):makeVehicle(ride);
+const makePlayer=ride=>{if(ride!=='car')return makeVehicle(ride);const c=carById(state.car);return makeVehicle('car',state.paint||c.color,false,c.style);};
 G.player=makePlayer('car');
 
 scene.add(G.player);
 
-const traffic=[],colors=['#d9dcdc','#1d2226','#8f979b','#7d1f1a','#24364f','#e8e6df','#4a5a4c','#6b6f72','#b8a68a'],styles=['sedan','hatch','suv','sedan','hatch'];
+const traffic=[],colors=['#d9dcdc','#1d2226','#8f979b','#7d1f1a','#24364f','#e8e6df','#4a5a4c','#6b6f72','#b8a68a'],styles=['sedan','hatch','suv','sedan','hatch','ev','sedan','hatch','gt'];
 
 /** A traffic car from a model kit you added: scaled to a real car's length, facing the way it drives. */
 function kitCar(mdl){const g=new T.Group(),k=4.4/mdl.size,body=new T.Group();

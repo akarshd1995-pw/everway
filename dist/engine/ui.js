@@ -6,6 +6,7 @@ import {rebuild} from './chunks.js';
 import {resetRoad} from './road.js';
 import {setViewDistance} from './far.js';
 import {makeVehicle, makePlayer} from './actors.js';
+import {CARS, carById} from './garage.js';
 import {toast,resetRegion} from './hud.js';
 import {applyQuality,resetAdaptive} from './quality.js';
 import {pickWeather} from './weather.js';
@@ -59,13 +60,40 @@ segmented('#season', v => { state.season = v; rebuild(state.distance); setViewDi
 segmented('#traffic', v => { state.traffic = v; toast({none: 'An empty road, all yours.', light: 'A little traffic.', busy: 'Busy roads: cars, vans, tractors and caravans.'}[v]); });
 segmented('#view', v => { state.view = v; setViewDistance(v); toast({short: 'Short view: the lightest on your computer.', medium: 'Medium view distance.', far: 'Far view: the land reaches the horizon.', veryfar: 'Very far view: for fast computers.'}[v]); });
 segmented('#modes', v => { state.mode = v; toast(v === 'manual' ? 'You drive: W A S D or the arrow keys.' : 'Autodrive on. It keeps to the lane and slows for bends.'); });
-segmented('#rides', v => {
-  state.ride = v; resetVehicle(state.speed);
+/** Swap the vehicle under you for the ride (and car, and paint) now chosen. */
+function swapPlayer() {
+  resetVehicle(state.speed);
   scene.remove(G.player); G.player.traverse(o => { if (o.isMesh) o.geometry.dispose(); });
-  G.player = makePlayer(v); scene.add(G.player);
+  G.player = makePlayer(state.ride); scene.add(G.player);
+}
+segmented('#rides', v => {
+  state.ride = v; swapPlayer(); paintGarage();
   state.target = v === 'cycle' ? 24 : v === 'bike' ? 75 : v === 'coach' ? 70 : 65; $('#speed').value = state.target;
-  toast({car: 'A modern coupé.', bike: 'Two wheels. An open road.', coach: 'All aboard. Sit back and watch the view.', cycle: 'Slow down and hear the world.'}[v]);
+  toast({car: carById(state.car).name + ': ' + carById(state.car).blurb, bike: 'Two wheels. An open road.', coach: 'All aboard. Sit back and watch the view.', cycle: 'Slow down and hear the world.'}[v]);
 });
+
+/* ------------------------------------------------------------ the garage */
+const PAINTS = ['#e8e2d4', '#141719', '#9aa3a6', '#c8342a', '#7d1f1a', '#d9a21b', '#e46b2a', '#2a6fb0', '#2f5d86', '#1f3a33', '#4a5a4c', '#6b4c8a'];
+function paintGarage() {
+  $('#garagebox').hidden = state.ride !== 'car';
+  const bar = (label, n) => `<span>${label}</span><span class="bar"><i style="width:${n * 10}%"></i></span>`;
+  $('#garage').innerHTML = CARS.map(c => `<button role="option" data-car="${c.id}" class="${c.id === state.car ? 'active' : ''}" aria-selected="${c.id === state.car}">
+    <span class="chip" style="background:${c.id === state.car && state.paint ? state.paint : c.color}"></span><b>${c.name}</b><small>${c.kind}</small>
+    <span class="more">${c.blurb} Top speed ${Math.round(c.h.top * 3.6)} km/h.<span class="bars">${bar('Speed', c.stats.speed)}${bar('Pick-up', c.stats.accel)}${bar('Handling', c.stats.handling)}${bar('Comfort', c.stats.comfort)}</span></span></button>`).join('');
+  const cur = state.paint || carById(state.car).color;
+  $('#paints').innerHTML = [carById(state.car).color, ...PAINTS.filter(p => p !== carById(state.car).color)].map((p, i) =>
+    `<button role="radio" data-paint="${i ? p : ''}" aria-checked="${p === cur}" aria-label="${i ? 'Paint ' + p : 'Original colour'}" class="${p === cur ? 'active' : ''}" style="background:${p}"></button>`).join('');
+}
+$('#garage').onclick = e => {
+  const b = e.target.closest('button'); if (!b || b.dataset.car === state.car) return;
+  state.car = b.dataset.car; state.paint = null; swapPlayer(); paintGarage();
+  const c = carById(state.car); toast(c.name + ', ' + c.kind.toLowerCase() + '. ' + c.blurb);
+};
+$('#paints').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.paint = b.dataset.paint || null; swapPlayer(); paintGarage();
+};
+paintGarage();
 segmented('#quality', v => {
   G.qualitySetting = v; G.quality = QUALITY[v === 'auto' ? 'high' : v]; resetAdaptive(); applyQuality();
   toast({auto: 'Graphics adapt to your device.', high: 'Full graphics: bloom, soft shadows, 4× anti-aliasing.', balanced: 'Balanced graphics.', low: 'Performance graphics.'}[v]);
@@ -136,7 +164,7 @@ $('#crash-home').onclick = backToMenu;
 /* ---- journal, achievements, journey codes, continue */
 function syncSeg(id, v) { document.querySelectorAll(id + ' button').forEach(x => x.classList.toggle('active', x.dataset.value === v)); }
 function syncAll() {
-  syncSeg('#rides', state.ride); syncSeg('#biome', state.biome); syncSeg('#season', state.season); syncSeg('#difficulty', state.difficulty);
+  syncSeg('#rides', state.ride); paintGarage(); syncSeg('#biome', state.biome); syncSeg('#season', state.season); syncSeg('#difficulty', state.difficulty);
   syncSeg('#weather', state.weather); syncSeg('#modes', state.mode); syncSeg('#traffic', state.traffic); syncSeg('#view', state.view);
   document.querySelectorAll('.guide .dest').forEach(x => x.classList.toggle('active', x.dataset.biome === state.biome));
   $('#speed').value = state.target; $('#time').value = state.time;

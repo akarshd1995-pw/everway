@@ -130,6 +130,66 @@ const STYLES = {
     n: 3.6, m: 3, mb: 4.4, tw: 0.9,
     cabin: {u0: 0.31, u1: 0.88, roof: [[0.31, 0.8], [0.47, 1.27], [0.6, 1.29], [0.88, 0.87]], w: 0.8, tw: 0.68},
   },
+  // a mid-engined supercar: a low wedge, the cabin pushed forward, a high engine deck behind it
+  supercar: {
+    len: 4.55, wheelU: [0.18, 0.79], r: 0.345, track: 0.9, tyreW: 0.31, slim: true, intake: true, exhausts: 2,
+    w: [[0, 0.78], [0.04, 0.92], [0.15, 0.99], [0.5, 0.97], [0.8, 1.04], [0.96, 0.99], [1, 0.86]],
+    top: [[0, 0.5], [0.04, 0.6], [0.12, 0.76], [0.19, 0.8], [0.3, 0.74], [0.62, 0.82], [0.79, 0.88], [0.92, 0.85], [1, 0.74]],
+    mid: [[0, 0.4], [0.1, 0.48], [0.9, 0.58], [1, 0.54]],
+    bot: [[0, 0.22], [0.05, 0.14], [0.95, 0.17], [1, 0.3]],
+    n: 3.6, m: 3, mb: 4.4, tw: 0.88,
+    cabin: {u0: 0.27, u1: 0.68, roof: [[0.27, 0.77], [0.41, 1.12], [0.52, 1.13], [0.68, 0.88]], w: 0.78, tw: 0.62},
+  },
+  // a hypercar: lower and wider still, with a tall rear wing
+  hyper: {
+    len: 4.75, wheelU: [0.17, 0.8], r: 0.35, track: 0.93, tyreW: 0.34, slim: true, intake: true, wing: 'tall', exhausts: 1,
+    w: [[0, 0.8], [0.04, 0.95], [0.15, 1.02], [0.5, 0.98], [0.8, 1.07], [0.96, 1.02], [1, 0.9]],
+    top: [[0, 0.46], [0.04, 0.56], [0.11, 0.74], [0.17, 0.79], [0.28, 0.71], [0.62, 0.79], [0.8, 0.87], [0.92, 0.83], [1, 0.72]],
+    mid: [[0, 0.38], [0.1, 0.45], [0.9, 0.55], [1, 0.52]],
+    bot: [[0, 0.2], [0.05, 0.12], [0.95, 0.15], [1, 0.28]],
+    n: 3.8, m: 3.2, mb: 4.6, tw: 0.86,
+    cabin: {u0: 0.29, u1: 0.66, roof: [[0.29, 0.74], [0.42, 1.06], [0.52, 1.08], [0.66, 0.84]], w: 0.74, tw: 0.58},
+  },
+  // a muscle car: a long flat bonnet with a scoop, a short fastback, wide and square
+  muscle: {
+    len: 4.85, wheelU: [0.17, 0.8], r: 0.37, track: 0.86, tyreW: 0.29, scoop: true, wing: 'lip', exhausts: 2,
+    w: [[0, 0.8], [0.03, 0.92], [0.1, 0.96], [0.85, 0.97], [0.97, 0.94], [1, 0.86]],
+    top: [[0, 0.7], [0.03, 0.8], [0.15, 0.86], [0.38, 0.88], [0.8, 0.9], [0.96, 0.9], [1, 0.82]],
+    mid: [[0, 0.56], [0.1, 0.6], [0.9, 0.62], [1, 0.58]],
+    bot: [[0, 0.3], [0.05, 0.22], [0.95, 0.22], [1, 0.32]],
+    n: 4, m: 3.4, mb: 4.8, tw: 0.92,
+    cabin: {u0: 0.43, u1: 0.87, roof: [[0.43, 0.88], [0.56, 1.32], [0.67, 1.33], [0.87, 0.92]], w: 0.84, tw: 0.72},
+  },
+  // a grand tourer: a long bonnet, the cabin set well back, smooth and elegant
+  gt: {
+    len: 4.8, wheelU: [0.16, 0.8], r: 0.37, track: 0.86, tyreW: 0.28, exhausts: 2,
+    w: [[0, 0.74], [0.035, 0.88], [0.12, 0.95], [0.5, 0.96], [0.85, 0.98], [0.96, 0.92], [1, 0.8]],
+    top: [[0, 0.56], [0.04, 0.66], [0.2, 0.74], [0.38, 0.8], [0.8, 0.86], [0.94, 0.85], [1, 0.74]],
+    mid: [[0, 0.47], [0.1, 0.54], [0.9, 0.6], [1, 0.55]],
+    bot: [[0, 0.28], [0.05, 0.18], [0.95, 0.2], [1, 0.32]],
+    n: 3.6, m: 3, mb: 4.4, tw: 0.9,
+    cabin: {u0: 0.4, u1: 0.88, roof: [[0.4, 0.8], [0.54, 1.27], [0.64, 1.28], [0.88, 0.86]], w: 0.79, tw: 0.66},
+  },
+  // an electric saloon: smooth, no grille, one long glass roof
+  ev: {
+    len: 4.8, wheelU: [0.17, 0.81], r: 0.36, track: 0.84, tyreW: 0.25, slim: true, noGrille: true, exhausts: 0,
+    w: [[0, 0.74], [0.04, 0.88], [0.14, 0.94], [0.85, 0.94], [0.96, 0.9], [1, 0.8]],
+    top: [[0, 0.6], [0.04, 0.72], [0.2, 0.8], [0.27, 0.84], [0.82, 0.92], [0.95, 0.9], [1, 0.8]],
+    mid: [[0, 0.5], [0.1, 0.58], [0.9, 0.64], [1, 0.6]],
+    bot: [[0, 0.3], [0.05, 0.2], [0.95, 0.22], [1, 0.34]],
+    n: 3.4, m: 2.8, mb: 4.2, tw: 0.9,
+    cabin: {u0: 0.26, u1: 0.9, roof: [[0.26, 0.84], [0.44, 1.42], [0.66, 1.43], [0.9, 0.92]], w: 0.82, tw: 0.7},
+  },
+  // a rally hatch: raised a little, chunky tyres, a roof spoiler and mud flaps
+  rally: {
+    len: 4.1, wheelU: [0.18, 0.81], r: 0.36, track: 0.84, tyreW: 0.25, wing: 'roof', flaps: true, exhausts: 1,
+    w: [[0, 0.76], [0.04, 0.88], [0.12, 0.95], [0.88, 0.96], [0.97, 0.9], [1, 0.84]],
+    top: [[0, 0.68], [0.045, 0.8], [0.2, 0.92], [0.3, 0.96], [0.9, 1.0], [1, 0.98]],
+    mid: [[0, 0.6], [0.1, 0.68], [0.9, 0.71], [1, 0.68]],
+    bot: [[0, 0.42], [0.05, 0.32], [0.96, 0.34], [1, 0.44]],
+    n: 3.2, m: 2.6, mb: 4, tw: 0.9,
+    cabin: {u0: 0.3, u1: 0.975, roof: [[0.3, 0.96], [0.46, 1.53], [0.88, 1.51], [0.975, 1.06]], w: 0.86, tw: 0.78},
+  },
   suv: {
     len: 4.7, wheelU: [0.18, 0.8], r: 0.4, track: 0.83, tyreW: 0.26,
     w: [[0, 0.76], [0.04, 0.9], [0.12, 0.95], [0.88, 0.95], [0.97, 0.92], [1, 0.84]],
@@ -197,7 +257,7 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
   }
   // grille
   const nose = sec(0.012);
-  add(roundedBox(style === 'roadster' ? 0.7 : 0.95, style === 'suv' ? 0.26 : 0.16, 0.05, 0.06), dark, 0, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.01);
+  if (!S.noGrille) add(roundedBox(style === 'roadster' ? 0.7 : 0.95, style === 'suv' ? 0.26 : 0.16, 0.05, 0.06), dark, 0, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.01);
   if (style === 'roadster') for (let i = -3; i <= 3; i++) add(roundedBox(0.012, 0.12, 0.04, 0.005), chrome, i * 0.085, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.03);
 
   // lamps
@@ -216,18 +276,33 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
   } else {
     for (const side of [-1, 1]) {
       const p = sec(0.02), y = (p.mid + p.top) / 2 - 0.02;
-      add(roundedBox(0.4, 0.13, 0.08, 0.05), head, side * p.w * 0.66, y, p.z + 0.02, 0, -side * 0.15, 0);
-      add(roundedBox(0.44, 0.17, 0.06, 0.06), dark, side * p.w * 0.66, y, p.z + 0.05, 0, -side * 0.15, 0);
+      if (S.slim) { add(roundedBox(0.5, 0.06, 0.08, 0.025), head, side * p.w * 0.62, y + 0.02, p.z + 0.03, 0, -side * 0.22, 0); add(roundedBox(0.54, 0.1, 0.06, 0.04), dark, side * p.w * 0.62, y + 0.02, p.z + 0.06, 0, -side * 0.22, 0); }
+      else { add(roundedBox(0.4, 0.13, 0.08, 0.05), head, side * p.w * 0.66, y, p.z + 0.02, 0, -side * 0.15, 0);
+      add(roundedBox(0.44, 0.17, 0.06, 0.06), dark, side * p.w * 0.66, y, p.z + 0.05, 0, -side * 0.15, 0); }
       heads.push([side * p.w * 0.66, y, p.z - 0.06]);
       const t = sec(0.985), ty = (t.mid + t.top) / 2;
-      add(roundedBox(0.42, 0.14, 0.08, 0.05), tail, side * t.w * 0.72, ty, t.z - 0.01, 0, side * 0.15, 0);
+      if (S.slim) add(roundedBox(0.62, 0.06, 0.08, 0.025), tail, side * t.w * 0.6, ty, t.z - 0.01, 0, side * 0.1, 0);
+      else add(roundedBox(0.42, 0.14, 0.08, 0.05), tail, side * t.w * 0.72, ty, t.z - 0.01, 0, side * 0.15, 0);
       tails.push([side * t.w * 0.72, ty, t.z + 0.08]);
     }
   }
   g.userData.lampPos = {head: heads, tail: tails};
 
   // exhaust
-  for (const side of style === 'roadster' ? [-1, 1] : [1]) add(new T.CylinderGeometry(0.035, 0.035, 0.3, 14), chrome, side * 0.42, S.bot[1][1] + 0.04, Z(0.97), Math.PI / 2, 0, 0);
+  const pipes = S.exhausts === 2 ? [-1, 1] : S.exhausts === 0 ? [] : style === 'roadster' ? [-1, 1] : [1];
+  for (const side of pipes) add(new T.CylinderGeometry(S.exhausts === 2 ? 0.045 : 0.035, 0.035, 0.3, 14), chrome, side * (S.exhausts === 2 ? 0.5 : 0.42), S.bot[1][1] + 0.04, Z(0.97), Math.PI / 2, 0, 0);
+
+  // extras that give each kind of car its character
+  if (S.wing === 'tall' || S.wing === 'roof' || S.wing === 'lip') {
+    const wu = S.wing === 'roof' ? S.cabin.roof[S.cabin.roof.length - 2][0] + 0.02 : 0.95, wp = sec(wu);
+    const wy = S.wing === 'tall' ? wp.top + 0.38 : S.wing === 'roof' ? S.cabin.roof[S.cabin.roof.length - 2][1] - 0.02 : wp.top + 0.04;
+    const span = S.wing === 'roof' ? S.cabin.w * 1.7 : wp.w * 1.8;
+    add(roundedBox(span, 0.035, S.wing === 'lip' ? 0.16 : 0.32, 0.015), S.wing === 'tall' ? dark : paint, 0, wy, wp.z + (S.wing === 'roof' ? 0.12 : 0), -0.08, 0, 0);
+    if (S.wing === 'tall') for (const side of [-1, 1]) { add(roundedBox(0.04, 0.38, 0.14, 0.015), dark, side * span * 0.32, wp.top + 0.19, wp.z + 0.04); add(roundedBox(0.02, 0.14, 0.36, 0.01), dark, side * span / 2, wy + 0.02, wp.z); }
+  }
+  if (S.scoop) { const sp = sec(0.2); add(roundedBox(0.5, 0.09, 0.55, 0.04), paint, 0, sp.top + 0.03, sp.z); add(roundedBox(0.4, 0.06, 0.03, 0.02), dark, 0, sp.top + 0.04, sp.z - 0.27); }
+  if (S.intake) for (const side of [-1, 1]) { const ip = sec(0.66); add(roundedBox(0.06, 0.16, 0.42, 0.04), dark, side * (ip.w - 0.02), ip.mid - 0.05, ip.z, 0, 0, 0); }
+  if (S.flaps) for (const side of [-1, 1]) { add(roundedBox(0.3, 0.26, 0.015, 0.01), rubber, side * (S.track + 0.08), 0.24, Z(S.wheelU[1]) + S.r + 0.1); add(roundedBox(0.3, 0.22, 0.015, 0.01), rubber, side * (S.track + 0.08), 0.26, Z(S.wheelU[0]) + S.r + 0.1); }
 
   // mirrors
   const mirrorU = S.cockpit ? S.cockpit[0] + 0.02 : S.cabin.u0 + 0.04, mp = sec(mirrorU);
