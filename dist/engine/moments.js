@@ -244,13 +244,13 @@ const northern = {
 
 /* ================================================================ starlings at dusk */
 // A murmuration: hundreds of birds in one flowing, folding cloud, over the fields before dark.
-const SB = 600, sbPos = new Float32Array(SB * 3), sbDir = new Float32Array(SB * 3), sbR = new Float32Array(SB);
+const SB = 1400, sbPos = new Float32Array(SB * 3), sbDir = new Float32Array(SB * 3), sbR = new Float32Array(SB);
 for (let i = 0; i < SB; i++) { const u = Math.random() * 2 - 1, a = Math.random() * 6.283, q = Math.sqrt(1 - u * u); sbDir.set([q * Math.cos(a), u, q * Math.sin(a)], i * 3); sbR[i] = Math.cbrt(Math.random()); }
 const sbGeo = new T.BufferGeometry(); sbGeo.setAttribute('position', new T.BufferAttribute(sbPos, 3));
 const sbMat = new T.ShaderMaterial({
   uniforms: {uScale: {value: 400}, uK: {value: 0}, uCol: {value: new T.Color('#202326')}},
-  vertexShader: `uniform float uScale;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=max(1.2,.45*uScale/max(-mv.z,1.));}`,
-  fragmentShader: `uniform float uK;uniform vec3 uCol;void main(){vec2 q=gl_PointCoord-.5;if(dot(q,q)>.25)discard;gl_FragColor=vec4(uCol,.9*uK);}`,
+  vertexShader: `uniform float uScale;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=max(2.,.7*uScale/max(-mv.z,1.));}`,
+  fragmentShader: `uniform float uK;uniform vec3 uCol;void main(){vec2 q=gl_PointCoord-.5;if(dot(q,q)>.25)discard;gl_FragColor=vec4(uCol,uK);}`,
   transparent: true, depthWrite: false, fog: true,
 });
 sbMat.fog = false;
@@ -260,7 +260,7 @@ const starlings = {
   can() { const h = hour(), b = biomeAt(state.distance); return h > 16.3 && h < 19.3 && sunDir.y > -.02 && sunDir.y < .2 && (b === 'fields' || b === 'coast') && G.weatherNow !== 'rainy' && state.season !== 'summer'; },
   start() {
     this.t = 0; this.life = rnd(100, 160); this.k = 0;
-    this.s = state.distance + rnd(380, 520); this.lx = (Math.random() < .5 ? -1 : 1) * rnd(90, 200); this.h = Math.max(ground(this.s, this.lx), roadHeight(this.s)) + rnd(55, 95);
+    this.s = state.distance + rnd(260, 360); this.lx = (Math.random() < .5 ? -1 : 1) * rnd(60, 130); this.h = Math.max(ground(this.s, this.lx), roadHeight(this.s)) + rnd(40, 70);
     sbPts.visible = true; at(this.s, this.lx, this.h); return 'Starlings, gathering for the night, ' + where(_v.x, _v.z) + '.';
   },
   update(dt) {
