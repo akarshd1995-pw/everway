@@ -283,18 +283,28 @@ const starlings = {
 
 /* ================================================================ horses in a field */
 function buildHorse(coat, mane) {
-  const g = new T.Group(), M = new T.MeshStandardMaterial({color: coat, roughness: .8}), D = new T.MeshStandardMaterial({color: mane, roughness: .9});
-  const box = (w, h, d, m, x, y, z, parent = g) => { const b = new T.Mesh(new T.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = true; parent.add(b); return b; };
-  box(.62, .7, 1.75, M, 0, 1.25, 0);                                   // body
-  box(.5, .5, .5, M, 0, 1.3, .9).rotation.x = .3;                      // chest
-  const neck = new T.Group(); neck.position.set(0, 1.45, .95); g.add(neck);
-  box(.32, .95, .38, M, 0, .4, .15, neck).rotation.x = .55;            // neck, leaning forward
-  box(.08, .8, .2, D, 0, .45, -.02, neck).rotation.x = .55;            // mane
-  const head = box(.26, .3, .62, M, 0, .82, .55, neck); head.rotation.x = .9;
-  box(.06, .14, .06, M, .09, .97, .38, neck); box(.06, .14, .06, M, -.09, .97, .38, neck);   // ears
+  const g = new T.Group(), M = new T.MeshStandardMaterial({color: coat, roughness: .75}), D = new T.MeshStandardMaterial({color: mane, roughness: .9}), H = new T.MeshStandardMaterial({color: '#1d1a17', roughness: .9});
+  const add = (geo, m, x, y, z, parent = g) => { const b = new T.Mesh(geo, m); b.position.set(x, y, z); b.castShadow = true; parent.add(b); return b; };
+  // a rounded barrel of a body, deeper at the chest, with rump and shoulder
+  const body = add(new T.CapsuleGeometry(.36, 1.1, 4, 10), M, 0, 1.28, 0); body.rotation.x = Math.PI / 2; body.scale.set(.95, 1, 1.12);
+  add(new T.SphereGeometry(.4, 10, 8), M, 0, 1.33, -.62).scale.set(.95, .95, 1);          // rump
+  add(new T.SphereGeometry(.4, 10, 8), M, 0, 1.3, .62).scale.set(.9, 1.05, .9);           // chest
+  // neck and head on a pivot at the withers, so it can lower to graze
+  const neck = new T.Group(); neck.position.set(0, 1.42, .78); g.add(neck);
+  const nk = add(new T.CylinderGeometry(.15, .25, 1, 8), M, 0, .38, .2, neck); nk.rotation.x = .62;
+  const mn = add(new T.BoxGeometry(.07, .95, .14), D, 0, .48, .06, neck); mn.rotation.x = .62;
+  const head = add(new T.CylinderGeometry(.09, .15, .62, 8), M, 0, .82, .62, neck); head.rotation.x = 1.75;
+  add(new T.SphereGeometry(.11, 8, 6), M, 0, .74, .9, neck);                                 // muzzle
+  add(new T.ConeGeometry(.045, .16, 5), M, .07, 1.0, .5, neck); add(new T.ConeGeometry(.045, .16, 5), M, -.07, 1.0, .5, neck);   // ears
+  // slim legs with a knee, dark hooves
   const legs = [];
-  for (const [x, z] of [[.2, .7], [-.2, .7], [.2, -.7], [-.2, -.7]]) { const p = new T.Group(); p.position.set(x, .95, z); g.add(p); box(.15, .95, .17, M, 0, -.47, 0, p); box(.16, .12, .18, D, 0, -.92, 0, p); legs.push(p); }
-  const tail = new T.Group(); tail.position.set(0, 1.45, -.88); g.add(tail); box(.12, .75, .12, D, 0, -.36, -.08, tail).rotation.x = -.25;
+  for (const [x, z] of [[.18, .62], [-.18, .62], [.18, -.62], [-.18, -.62]]) {
+    const p = new T.Group(); p.position.set(x, 1.05, z); g.add(p);
+    add(new T.CylinderGeometry(.1, .065, .58, 6), M, 0, -.28, 0, p); add(new T.CylinderGeometry(.055, .05, .44, 6), M, 0, -.78, 0, p);
+    add(new T.CylinderGeometry(.065, .075, .08, 6), H, 0, -1.01, 0, p); legs.push(p);
+  }
+  const tail = new T.Group(); tail.position.set(0, 1.42, -.98); g.add(tail);
+  add(new T.CylinderGeometry(.05, .11, .75, 6), D, 0, -.35, -.06, tail).rotation.x = -.2;
   g.userData = {neck, legs, tail};
   return g;
 }
@@ -321,7 +331,7 @@ const horses = {
       const walking = h.walk > 0 && h.graze > 0;
       if (walking) { h.s += Math.cos(h.yaw) * .8 * dt; h.lx += Math.sin(h.yaw) * .8 * dt; }
       const down = walking ? .1 : 1;
-      u.neck.rotation.x += (1.05 * down - u.neck.rotation.x) * Math.min(1, dt * 1.5);
+      u.neck.rotation.x += (1.9 * down - u.neck.rotation.x) * Math.min(1, dt * 1.5);
       const sw = walking ? Math.sin(G.elapsed * 5 + h.ph) * .35 : 0; u.legs.forEach((l, i) => { l.rotation.x = (i === 0 || i === 3 ? sw : -sw); });
       u.tail.rotation.z = Math.sin(G.elapsed * 1.3 + h.ph) * .25;
       at(h.s, h.lx, ground(h.s, h.lx), h.m.position); h.m.rotation.y = roadYaw(h.s) + h.yaw;
