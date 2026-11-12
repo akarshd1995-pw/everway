@@ -22,7 +22,7 @@ function fit(car) {
 }
 /** Call every frame before the picture is drawn. */
 export function updateCarReflection() {
-  const car = G.player; if (!car || !G.quality.post || state.ride === 'cycle') return;
+  const car = G.player; if (!car || !G.quality.post || state.ride === 'cycle' || G.noCubeReflect) return;
   if (car !== fitted) fit(car);
   car.getWorldPosition(cube.position); cube.position.y += 1.1; cube.updateMatrixWorld();
   const vis = car.visible, auto = renderer.shadowMap.autoUpdate, target = renderer.getRenderTarget();
