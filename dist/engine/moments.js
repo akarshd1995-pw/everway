@@ -215,7 +215,7 @@ const auMat = new T.ShaderMaterial({
       float body=smoothstep(0.,.12,y)*(1.-smoothstep(.25,1.,y));            // a bright lower edge, fading upwards
       vec3 c=mix(vec3(.25,1.,.55),vec3(.65,.35,1.),smoothstep(.35,.9,y));   // green, violet at the top
       float a=body*rays*fold*uK*smoothstep(0.,.08,vUv.x)*smoothstep(1.,.92,vUv.x);
-      gl_FragColor=vec4(c*a*1.4,a);}`,
+      gl_FragColor=vec4(c*a*2.3,a);}`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false, side: T.DoubleSide,
 });
 const aurora = new T.Group(); aurora.visible = false; scene.add(aurora);
@@ -223,7 +223,7 @@ for (let i = 0; i < 3; i++) {
   // a long wavy ribbon on a circle round the camera, standing up from the horizon
   const N = 80, R = 2300 - i * 180, span = 1.5 - i * .25, pos = [], uv = [], idx = [];
   for (let j = 0; j <= N; j++) { const a = (j / N - .5) * span + i * .35, r = R + Math.sin(j * .21 + i) * 140, x = Math.sin(a) * r, z = -Math.cos(a) * r;
-    pos.push(x, 120 + i * 40, z, x, 900 - i * 120, z); uv.push(j / N, 0, j / N, 1); if (j) { const k = j * 2; idx.push(k - 2, k - 1, k, k, k - 1, k + 1); } }
+    pos.push(x, 140 + i * 40, z, x, 1150 - i * 140, z); uv.push(j / N, 0, j / N, 1); if (j) { const k = j * 2; idx.push(k - 2, k - 1, k, k, k - 1, k + 1); } }
   const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
   const m = new T.Mesh(g, auMat); m.frustumCulled = false; aurora.add(m);
 }
