@@ -348,7 +348,7 @@ function buildBalloon() {
   for (const [x, z] of [[.65, .65], [-.65, .65], [.65, -.65], [-.65, -.65]]) rp.push(x, -1, z, x * 1.8, 4.3, z * 1.8);
   const rg = new T.BufferGeometry(); rg.setAttribute('position', new T.Float32BufferAttribute(rp, 3)); g.add(new T.LineSegments(rg, rope));
   const flame = new T.Sprite(new T.SpriteMaterial({map: softTex, color: '#ffb347', transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: 0})); flame.position.y = 2.2; flame.scale.set(1.6, 2.6, 1); g.add(flame);
-  g.userData.flame = flame; g.scale.setScalar(1.4);
+  g.userData.flame = flame; g.scale.setScalar(1.8);
   return g;
 }
 let balloonM = null;
@@ -357,8 +357,8 @@ const balloon = {
   can() { const h = hour(), b = biomeAt(state.distance + 600); return ((h > 6.3 && h < 10) || (h > 16 && h < 19)) && G.weatherNow === 'sunny' && (b === 'fields' || b === 'coast' || b === 'mountain') && state.season !== 'winter'; },
   start() {
     if (!balloonM) { balloonM = buildBalloon(); scene.add(balloonM); }
-    this.s = state.distance + rnd(550, 850); this.lx = (Math.random() < .5 ? -1 : 1) * rnd(110, 260);
-    this.h = Math.max(ground(this.s, this.lx), roadHeight(this.s)) + rnd(110, 220); this.t = 0; this.life = rnd(180, 260); this.burn = rnd(3, 9);
+    this.s = state.distance + rnd(380, 560); this.lx = (Math.random() < .5 ? -1 : 1) * rnd(70, 170);
+    this.h = Math.max(ground(this.s, this.lx), roadHeight(this.s)) + rnd(70, 140); this.t = 0; this.life = rnd(180, 260); this.burn = rnd(3, 9);
     balloonM.visible = true; at(this.s, this.lx, this.h); return 'A hot-air balloon, ' + where(_v.x, _v.z) + '.';
   },
   update(dt) {
