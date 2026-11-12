@@ -18,6 +18,7 @@ import {journal, ACHIEVEMENTS, POSTCARDS, PLACES, onAchievement, endDrive, start
 import {resetForks} from './fork.js';
 import {resetTrip} from './trip.js';
 import {resetEvents} from './events.js';
+import {resetMoments} from './moments.js';
 import {startReplay, clearReplay} from './replay.js';
 import {setSeed} from './road.js';
 import {route, LEG} from './biomes.js';
@@ -243,7 +244,7 @@ function updateGuide() {
   rows.sort((a, b) => a.dataset.km - b.dataset.km).forEach(r => guide.appendChild(r));
 }
 export function newJourney() {
-  resetEvents(); resetTrip(); resetForks(); clearReplay(); setSeed(randomSeed()); state.routeOffset = Math.floor(Math.random() * 11); state.weatherOffset = Math.floor(Math.random() * 5);
+  resetEvents(); resetMoments(); resetTrip(); resetForks(); clearReplay(); setSeed(randomSeed()); state.routeOffset = Math.floor(Math.random() * 11); state.weatherOffset = Math.floor(Math.random() * 5);
   if (state.autoTime) { state.time = Math.round((5.5 + Math.random() * 16) * 20) / 20; $('#time').value = state.time; }
   rebuildWorld(); updateGuide();
 }

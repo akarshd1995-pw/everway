@@ -66,6 +66,8 @@ if (DEBUG) window.__ev = {
   setWeather: w => { state.weather = w; G.weatherNow = w; G.weatherNext = null; G.snapWeather = 2; },
   snap: () => new Promise(r => snapCb = r),
   setCam: (p, t) => setDebugView(p, t),
+  /** Start a rare moment now (rainbow, mist, fireflies, meteors, aurora, starlings, horses, balloon). */
+  moment: n => import('./moments.js').then(m => m.forceMoment(n)),
   /** Jump to a distance and build the road there at once (tests). */
   jumpTo: d => { state.distance = d; rebuild(d); setViewDistance(); },
   /** Stop drawing new frames (the last one stays on screen), for page screenshots. */

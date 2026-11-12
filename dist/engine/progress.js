@@ -25,6 +25,7 @@ export const ACHIEVEMENTS = [
   ['manual', 'Hands on the wheel', 'Drive yourself for 10 km'],
   ['sea', 'Into the sea', 'Find out what lies beyond the cliffs'],
   ['postcards', 'Wish you were here', 'Collect every postcard'],
+  ['wonders', 'Small wonders', 'See all eight rare moments: a rainbow, valley mist, fireflies, a shooting star, the northern lights, starlings, horses and a balloon'],
 ];
 
 export const journal = Object.assign({postcards: {}, totalKm: 0, longestKm: 0, drives: 0, crashes: 0, nightKm: 0, coachKm: 0, manualKm: 0, places: {}, seasons: {}, got: {}}, load(KEY_LOG, {}));
@@ -35,6 +36,13 @@ function unlock(key) {
   if (journal.got[key]) return;
   journal.got[key] = Date.now(); store(KEY_LOG, journal);
   const a = ACHIEVEMENTS.find(x => x[0] === key); if (a) listeners.forEach(fn => fn(a[1], a[2]));
+}
+
+/** A rare moment was seen (rainbow, mist, fireflies, meteors, aurora, starlings, horses, balloon). */
+export function sawMoment(key) {
+  journal.moments = journal.moments || {}; if (journal.moments[key]) return;
+  journal.moments[key] = Date.now(); store(KEY_LOG, journal);
+  if (Object.keys(journal.moments).length >= 8) unlock('wonders');
 }
 
 let lastOdo = 0, saveTimer = 0, cleanKm = 0;
