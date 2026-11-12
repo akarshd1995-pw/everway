@@ -268,7 +268,7 @@ const starlings = {
     this.k += ((going ? 1 : 0) - this.k) * Math.min(1, dt * .5);
     const t = G.elapsed, c = at(this.s + Math.sin(t * .05) * 60, this.lx + Math.sin(t * .037) * 50, this.h + Math.sin(t * .11) * 12, new T.Vector3());
     // the cloud stretches, flattens and turns; waves of turning birds run through it
-    const sx = 95 + 50 * Math.sin(t * .29), sy = 18 + 12 * Math.sin(t * .41 + 1), sz = 55 + 35 * Math.cos(t * .23), rot = t * .17, cr = Math.cos(rot), sr = Math.sin(rot);
+    const sx = 72 + 38 * Math.sin(t * .29), sy = 15 + 9 * Math.sin(t * .41 + 1), sz = 44 + 28 * Math.cos(t * .23), rot = t * .17, cr = Math.cos(rot), sr = Math.sin(rot);
     for (let i = 0; i < SB; i++) {
       const o = i * 3, r = sbR[i]; let x = sbDir[o] * sx * r, y = sbDir[o + 1] * sy * r, z = sbDir[o + 2] * sz * r;
       x += 30 * Math.sin(t * .8 + z * .05); y += 12 * Math.sin(t * 1.1 + x * .03); z += 14 * Math.sin(t * .6 + y * .08);

@@ -70,6 +70,22 @@ Also new in v3, with or without the download:
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
 
+## Version 3.17: rare moments, and safer overtaking
+Small surprises that reward a long drive. Each happens only now and then, when the time, place, season and weather suit it, with a few minutes of ordinary road between any two. A quiet word says where to look.
+- A rainbow opposite the sun when the rain stops (with a faint second bow), while the sun is low enough to lift it above the hills.
+- Mist lying in the hollows below the road on calm mornings, warming as the sun comes up.
+- Fireflies in the verges on summer nights.
+- Shooting stars on a clear night.
+- The northern lights over the snow: green curtains with violet tops, rippling slowly.
+- Starlings flocking at dusk in autumn, winter and spring: one flowing, folding cloud of birds.
+- Horses grazing in a field, wandering a few steps now and then.
+- A hot-air balloon drifting over the countryside on calm mornings and evenings, its burner glowing.
+- See all eight for the "Small wonders" achievement in the journal.
+
+Driving
+- Autodrive overtakes slow vehicles, but only on a straight, open stretch, and only when the nearest oncoming vehicle is far enough away to still be clear once it is back in its lane. It keeps checking and drops back if something appears. Oncoming drivers slow down and keep to the verge if anyone is in their lane.
+- Cameras no longer go inside hillsides (which made walls and grass look as if they floated in the sky); the side camera keeps clear of houses in villages and towns.
+
 ## Version 3.16: life on the road, and headlights
 
 - Now and then (every few kilometres at most) something happens on the road: sheep wander across in the countryside, roadworks close your lane with cones and a temporary traffic light, a tractor ahead slows, signals and turns off into a field, and at dusk deer cross in the hills. Autodrive and the traffic slow down and wait; driving yourself, you deal with them (driving into an animal is a knock, and running a red light gets a word).
