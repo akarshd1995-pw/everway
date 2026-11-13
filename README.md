@@ -70,6 +70,17 @@ Also new in v3, with or without the download:
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
 
+## Version 3.19: a better picture
+- Sky: sunrise and sunset glow on the sun's side, a pink band over the blue shadow of the earth at dusk, and a high layer of thin cloud that drifts with the wind and catches the sunset.
+- Wet roads: headlights and tail-lights stretch into long reflections on wet tarmac; raindrops make rings in the puddles.
+- Rain on the glass: drops bead on the windscreen in the driver's view and the wipers clear them; in the chase and side views a few drops sit on the lens.
+- Your car reflects the world around it: sky, trees and road slide across the paint and glass.
+- Trees bend in passing gusts; grass parts as the car brushes the verge.
+- Bare rock on steep slopes, finer ground detail close up, and woods that carry on to the horizon.
+- Speed blur at high speed, depth of field in the cinematic and photo cameras.
+- Look (Settings, Sky): Natural, Warm film, Cool or Black & white, with lens flare, speed blur, film grain and cinema bars as switches.
+- Smoother running: the picture resolution adjusts itself to hold the frame rate before the quality level steps down; smoother edges on Balanced.
+
 ## Version 3.18: the garage
 Eleven cars to choose from (Settings, Trip, Ride: Car), each with its own body, engine note and feel on the road. The names are our own; each is modelled on a kind of car you can buy today, with performance in the range of the real thing.
 
