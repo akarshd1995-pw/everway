@@ -47,7 +47,7 @@ function buildRoad(start,ox){
   const g=gridGeometry('road7',R_ROWS,cols.length,{position:3,normal:3,color:3,uv:2}),A=g.attributes;
   const pos=A.position.array,nor=A.normal.array,col=A.color.array,uv=A.uv.array,tint=_rt;let v=0;
   const TE=G.trip?G.trip.end:Infinity;
-  for(let row=0;row<R_ROWS;row++){const s=start+row*3,P=terrainParams(s),rx=roadX(s),tb=Math.tan(roadBank(s)),gr=roadGrade(s),nl=Math.hypot(tb,1,gr),gone=s>TE+5?-80:0;tint.copy(P.verge).multiplyScalar(1.15);
+  for(let row=0;row<R_ROWS;row++){const s=start+row*3,P=terrainParams(s),rx=roadX(s),tb=Math.tan(roadBank(s)),gr=roadGrade(s),nl=Math.hypot(tb,1,gr),gone=s>TE+5?-80:0;{const wn=vnoise(s*.07,3.3);tint.copy(P.ground).multiplyScalar(.7+.25*wn).lerp(_dirt,.35+smooth(vnoise(s*.03+5,1.1),.5,.8)*.45);}
     for(const [lx,shoulder] of cols){pos[v*3]=rx+sideX(s,lx)-ox;pos[v*3+1]=roadSurface(s,lx)+(Math.abs(lx)>H+.5?-.02:.02)+gone;pos[v*3+2]=-(s-start);
       nor[v*3]=-tb/nl;nor[v*3+1]=1/nl;nor[v*3+2]=gr/nl;
       uv[v*2]=(lx+E)/(E*2);uv[v*2+1]=s/ROAD_TILE;/* continuous along the journey: no repeat per section */const c=shoulder?tint:_white;col[v*3]=c.r;col[v*3+1]=c.g;col[v*3+2]=c.b;v++;}}
@@ -57,9 +57,12 @@ function buildRoad(start,ox){
 
 const USABLE_MODELS=ASSETS&&Object.keys(ASSETS.models).length?ASSETS.models:null;
 // realistic trees near the road: downloaded tree models if you have them, otherwise the generated ones
-const TREE_MODELS={tree:USABLE_MODELS?.tree||GEN_TREES.tree,pine:USABLE_MODELS?.pine||GEN_TREES.pine};
-const GEN_LIMIT={tree:42,pine:46};
+const TREE_MODELS={tree:USABLE_MODELS?.tree||GEN_TREES.tree,pine:USABLE_MODELS?.pine||GEN_TREES.pine,bush:GEN_TREES.bush,treeFar:GEN_TREES.treeFar,pineFar:GEN_TREES.pineFar};
+const GEN_LIMIT={tree:42,pine:46,bush:150,treeFar:110,pineFar:110};
 
+// where the grass starts beside the road: an uneven, natural edge, sometimes right at the gravel, sometimes a stride back
+const vergeEdge=(s,side)=>ROAD.half+1.1+2.6*Math.pow(vnoise(s*.045+(side>0?13:41),side*1.7),1.6);
+const _dirt=new T.Color('#7a6b52');
 function makeChunk(index){const gen=chunkBuilder(index);let step;while(!(step=gen.next()).done);return step.value;}
 // Builds a road section in small steps so new sections never cause a stutter (see the frame loop).
 
@@ -86,7 +89,7 @@ function* chunkBuilder(index){
     B.add=(t,m,c,o)=>{const e=m.elements,s=start-e[14],lx=(e[12]-(roadX(s)-ox))*roadCos(s);if(inRiver(s,lx))return;add(t,m,c,o);};}
   if(TE<start+CH+40)for(const B of [near.solid,near.foliage,far.solid,far.foliage,lamps,windows,pools,signs,lod.solid,lod.foliage]){const add=B.add.bind(B);
     B.add=(t,m,c,o)=>{const e=m.elements,s=start-e[14];if(s>TE+8){const lx=(e[12]-(roadX(s)-ox))*roadCos(s);if(Math.abs(lx)<45||s>TE+60)return;}add(t,m,c,o);};}
-  function place(role,s,lx,size,rot,tint){const list=HQ?.[role],gen=list&&list[0]?.generated,lim=gen?{perChunk:GEN_LIMIT[role]}:MODEL_LIMITS[role];if(!list||Math.abs(lx)>(gen?140:90)||(perChunk[role]||0)>=lim.perChunk)return false;
+  function place(role,s,lx,size,rot,tint){if((role==='tree'||role==='pine')&&Math.abs(lx)>120&&HQ?.[role]?.[0]?.generated&&realTrees)role+='Far';const list=HQ?.[role],gen=list&&list[0]?.generated,lim=gen?{perChunk:GEN_LIMIT[role]}:MODEL_LIMITS[role];if(!list||Math.abs(lx)>(gen?(role.endsWith('Far')?400:140):90)||(perChunk[role]||0)>=lim.perChunk)return false;
     const mdl=list[Math.floor(r()*list.length)];let k=size/mdl.size;const room=Math.abs(lx)-8.6,half=mdl.width*k/2;
     if(half>room){k=room*2/mdl.width;if(k*mdl.height<size*.45)return false;} // too wide for this spot: keep the low-poly version
     perChunk[role]=(perChunk[role]||0)+1;const [x,z]=L(s,lx);
@@ -377,7 +380,7 @@ function* chunkBuilder(index){
         // where the woods are; a grove is a few trees of different sizes close together, with bushes under them
         const wood=(ss,lx)=>vnoise(ss*.0052+side*7.3,lx*.0061+side*3.1)*.7+vnoise(ss*.019,lx*.021)*.3;
         const grove=(ss,lx,n,k)=>{for(let q=0;q<n;q++){const ts=ss+(r()-.5)*(6+n*2.2),tl=lx+(r()-.5)*(6+n*2.2);if(Math.abs(tl)<11)continue;tree(ts,tl,k*(.75+r()*.5));}
-          if(!snowy&&!winter&&Math.abs(lx)<75)for(let q=0;q<Math.min(4,n+1);q++){const bs=ss+(r()-.5)*8,bl=lx+(r()-.5)*8;if(Math.abs(bl)<11)continue;const [bx,bz]=L(bs,bl),by=groundY(bs,bl);set(bl).foliage.add(blobT(r,true),M(bx,by+.35,bz,.9+r()*.7,.6+r()*.4,.9+r()*.7,r()*6),bio.treeC.clone().multiplyScalar(.8+r()*.25),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:by,swayH:1});}};
+          if(!snowy&&!winter&&Math.abs(lx)<75)for(let q=0;q<Math.min(4,n+1);q++){const bs=ss+(r()-.5)*8,bl=lx+(r()-.5)*8;if(Math.abs(bl)<11)continue;if(place('bush',bs,bl,1+r()*.8,undefined,leaves(bio.treeC)))continue;const [bx,bz]=L(bs,bl),by=groundY(bs,bl);set(bl).foliage.add(blobT(r,true),M(bx,by+.35,bz,.9+r()*.7,.6+r()*.4,.9+r()*.7,r()*6),bio.treeC.clone().multiplyScalar(.8+r()*.25),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:by,swayH:1});}};
         {const ss=s+r()*10,lx=side*(13+r()*55),w=wood(ss,lx);if(w>.55&&r()<(coastal?.35:.8))grove(ss,lx,w>.66?3+Math.floor(r()*3):1+Math.floor(r()*2),1);else if(r()<(coastal?.04:.08))tree(ss,lx,1.1);}
         {const ss=s+r()*6,lx=side*(70+r()*300),w=wood(ss,lx);if(w>.5&&r()<(coastal?.4:.85)){const big=(conifer||(b==='town'&&r()<.3));if(big)for(let q=0;q<2+Math.floor(r()*4);q++){const tl=lx+(r()-.5)*16;r()<.3?spruce(ss+(r()-.5)*14,tl,1.2):pine(ss+(r()-.5)*14,tl,1.2);}else grove(ss,lx,2+Math.floor(r()*4),1.25);}}
         {const ss=s+6,lx=side*(75+r()*120),w=wood(ss,lx);if(w>.6&&r()<(coastal?.3:.6))conifer?pine(ss,lx,1.1):deciduous(ss,lx,1.2);}
@@ -387,7 +390,7 @@ function* chunkBuilder(index){
           for(let q=0;q<14;q++){const a=r()*6.28,rr=Math.sqrt(r())*3.2,fs=cs+Math.cos(a)*rr,fl=cl+Math.sin(a)*rr;if(Math.abs(fl)<8.6)continue;const [fx,fz]=L(fs,fl),fy=groundY(fs,fl)+.32+r()*.18;
             near.solid.add(sphT(),M(fx,fy,fz,.09+r()*.05,.07,.09+r()*.05),fc.clone().offsetHSL(0,0,(r()-.5)*.08),{ao:.9});}}
         if(!snowy&&!winter)for(let k=0;k<3;k++)tufts(s+r()*12,side*(8.4+r()*6),P0.ground.clone().multiplyScalar(.85+r()*.3),b!=='town');
-        if(r()<.3&&!place('shrub',s+r()*10,side*(10+r()*6),1.2+r()*1.2)){const [x,z]=L(s+r()*10,side*(10+r()*5));const y0=groundY(s,side*11);near.foliage.add(blobT(r,true),M(x,y0+.3,z,.6+r()*.4,.45+r()*.25,.6+r()*.4,r()*6),bio.treeC.clone().multiplyScalar(1.15),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:y0,swayH:1.2});}
+        if(r()<.45&&!place('shrub',s+r()*10,side*(10+r()*6),1.2+r()*1.2)&&!(!winter&&place('bush',s+r()*10,side*(9.5+r()*7),1.1+r()*.9,undefined,leaves(bio.treeC)))){const [x,z]=L(s+r()*10,side*(10+r()*5));const y0=groundY(s,side*11);near.foliage.add(blobT(r,true),M(x,y0+.3,z,.6+r()*.4,.45+r()*.25,.6+r()*.4,r()*6),bio.treeC.clone().multiplyScalar(1.15),{ao:.5,top:.2,vary:.15,sway:.3,swayBase:y0,swayH:1.2});}
       }else{
         if(r()<.4)cactus(s+r()*10,side*(14+r()*60));
         if(r()<.6){const [x,z]=L(s+r()*10,side*(10+r()*40));const y0=groundY(s,side*20);set(20).foliage.add(blobT(r,true),M(x,y0+.25,z,.6+r()*.5,.35+r()*.2,.6+r()*.5),C('#8a8b57'),{ao:.5,vary:.2,sway:.2,swayBase:y0,swayH:.6});}
@@ -609,7 +612,7 @@ function* chunkBuilder(index){
   if(!alien&&(b==='fields'||b==='coast'||b==='mountain'||b==='town')){const W=13.5,STEP=4;
     const hedgeC=winter?C('#6a5f4e'):SZN.leaves?C('#7b7a3c'):C('#4d7140');
     const kindAt=(s,side)=>{const h=hash2(Math.floor(s/160),side*7+3+(b==='town'?50:0));return b==='town'?(h<.6?'hedge':null):b==='mountain'?(h<.6?'wall':null):h<.42?'wall':h<.72?'hedge':h<.86?'fence':null;};
-    const seg=(kind,a,c)=>{const len=Math.hypot(c.x-a.x,c.z-a.z),ry=Math.atan2(a.x-c.x,a.z-c.z),rx=-Math.atan2(a.y-c.y,len),mx=(a.x+c.x)/2,my=(a.y+c.y)/2,mz=(a.z+c.z)/2;
+    const seg=(kind,a,c,leafy)=>{const len=Math.hypot(c.x-a.x,c.z-a.z),ry=Math.atan2(a.x-c.x,a.z-c.z),rx=-Math.atan2(a.y-c.y,len),mx=(a.x+c.x)/2,my=(a.y+c.y)/2,mz=(a.z+c.z)/2;
       if(kind==='wall'){
         // dry stone: a low core, two courses of uneven stones and a row of upright capstones
         near.solid.add(boxT(),M(mx,my+.3,mz,.5,.62,len+.05,ry,rx),'#8b8577',{ao:.45,vary:.2});
@@ -620,7 +623,7 @@ function* chunkBuilder(index){
       else if(kind==='hedge'){
         // a hedge: a dense core with rounded clumps along the top and sides
         near.foliage.add(boxT(),M(mx,my+.6,mz,.95,1.2,len+.1,ry,rx),hedgeC.clone().multiplyScalar(.82),{ao:.5,vary:.2,sway:.05,swayBase:my,swayH:1.4});
-        const n=Math.max(2,Math.round(len/1.1));
+        const n=leafy?0:Math.max(2,Math.round(len/1.1));
         for(let i=0;i<n;i++){const t=(i+.5)/n,px=lerp(a.x,c.x,t),pz=lerp(a.z,c.z,t),py=lerp(a.y,c.y,t),rad=.55+r()*.3;
           near.foliage.add(blobT(r,true),M(px+(r()-.5)*.25,py+1.05+r()*.35,pz+(r()-.5)*.25,rad*1.1,rad*.85,rad*1.2,r()*6),hedgeC.clone().offsetHSL((r()-.5)*.03,0,(r()-.5)*.08),{ao:.55,top:.25,vary:.15,sway:.25,swayBase:py,swayH:1.8});}}
       else{near.solid.add(boxT(),M(a.x,a.y+.6,a.z,.12,1.2,.12,ry),'#7d6a52',{ao:.6});for(const y of [.45,.95])near.solid.add(boxT(),M(mx,my+y,mz,.06,.1,len,ry,rx),'#8a7556');}};
@@ -628,7 +631,7 @@ function* chunkBuilder(index){
       for(let s=start;s<=start+CH+.01;s+=STEP){
         const kind=kindAt(s,side),gate=hash2(Math.floor(s/52),side+11)<.2&&(((s%52)+52)%52)<5;
         const [x,z]=L(s,side*W),cur=kind&&!gate?{x,z,y:groundY(s,side*W)}:null;
-        if(cur)obs(s,side*W,kind==='hedge'?.6:.4);if(cur&&prev&&pk===kind){seg(kind,prev,cur);obs(s-2,side*W,kind==='hedge'?.6:.4);}prev=cur;pk=kind;}
+        if(cur)obs(s,side*W,kind==='hedge'?.6:.4);if(cur&&prev&&pk===kind){let leafy=false;if(kind==='hedge'&&!winter){leafy=true;for(const ds of [-3.3,-1.3])if(!place('bush',s+ds+(r()-.5)*.4,side*(W+(r()-.5)*.3),1.75+r()*.45,undefined,hedgeC.clone().offsetHSL((r()-.5)*.03,0,(r()-.5)*.05)))leafy=false;}seg(kind,prev,cur,leafy);obs(s-2,side*W,kind==='hedge'?.6:.4);}prev=cur;pk=kind;}
       // boundaries running away from the road between fields
       for(let cell=Math.floor(start/85);cell*85<start+CH;cell++){const sc=cell*85+20+hash2(cell,side*3+1)*45;if(sc<start||sc>=start+CH)continue;
         const kind=kindAt(sc,side);if(!kind||hash2(cell,side*9+2)>.6)continue;
@@ -661,7 +664,7 @@ function* chunkBuilder(index){
   yield;
   const add=m=>m&&g.add(m);
   if(inst.size){const hi=new T.Group();g.add(hi);g.userData.hi=hi;
-    for(const [mdl,mats] of inst)for(const p of mdl.parts){const cap=mdl.generated?64:INST_CAP,im=acquire('inst:'+p.geometry.uuid,()=>new T.InstancedMesh(p.geometry,p.material,cap)),n=Math.min(mats.length,cap);im.count=n;for(let i=0;i<n;i++)im.setMatrixAt(i,mats[i]);im.instanceMatrix.needsUpdate=true;if(p.material.userData.tint){const cols=instCol.get(mdl);for(let i=0;i<n;i++)im.setColorAt(i,cols[i]);im.instanceColor.needsUpdate=true;}im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();hi.add(im);}
+    for(const [mdl,mats] of inst)for(const p of mdl.parts){const cap=mdl.generated?(mdl.width<3||mdl.lite?160:64):INST_CAP,im=acquire('inst:'+p.geometry.uuid,()=>new T.InstancedMesh(p.geometry,p.material,cap)),n=Math.min(mats.length,cap);im.count=n;for(let i=0;i<n;i++)im.setMatrixAt(i,mats[i]);im.instanceMatrix.needsUpdate=true;if(p.material.userData.tint){const cols=instCol.get(mdl);for(let i=0;i<n;i++)im.setColorAt(i,cols[i]);im.instanceColor.needsUpdate=true;}im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();hi.add(im);}
     g.userData.lo=[lod.solid.mesh(MAT.solid,{cast:true}),lod.foliage.mesh(MAT.foliage,{cast:true})].filter(Boolean);g.userData.lo.forEach(m=>g.add(m));}
   // cat's eyes down the centre line: dull studs by day, glinting in the headlights at night
   if(b!=='planet'){const cat=acquire('cats',()=>new T.InstancedMesh(catGeo,CATS,12));let nc=0;
@@ -669,9 +672,9 @@ function* chunkBuilder(index){
     cat.count=nc;cat.instanceMatrix.needsUpdate=true;cat.computeBoundingSphere();g.add(cat);}
   if((b==='fields'||b==='town'||b==='mountain'||b==='coast')&&!winter){const n=b==='town'?8000:b==='mountain'?20000:26000,im=acquire('grass:'+n,()=>new T.InstancedMesh(bladeGeo,MAT.grass,n)),col=_gc,dry=_dry,base=P0.ground.clone().offsetHSL(0,-.08,-.02);let cs=0,clx=0,cy=0,tall=1,pk=0,pc=null;
     const fl=acquire('flowers',()=>new T.InstancedMesh(flowerGeo,flowerMat,FLOWER_CAP)),pal=FLOWERS[SZ]||FLOWERS.summer;let nf=0;
-    for(let i=0;i<n;i++){if(i%1200===1199)yield;if(i%9===0){const side=r()<.5?-1:1;cs=start+r()*CH;clx=side*(8.25+Math.pow(r(),2.6)*(b==='town'?9:48));cy=groundY(cs,clx);
+    for(let i=0;i<n;i++){if(i%1200===1199)yield;if(i%9===0){const side=r()<.5?-1:1;cs=start+r()*CH;clx=side*(vergeEdge(cs,side)+Math.pow(r(),2.6)*(b==='town'?9:48));cy=groundY(cs,clx);
         // thick and tall beside the road, thinner and shorter further out; meadow patches of their own colour
-        tall=1.3-.55*smooth(Math.abs(clx),9,34);const mv=vnoise(cs*.014+7,clx*.014+3);pk=mv>.58?(mv-.58)*2.2:mv<.38?(.38-mv)*2.4:0;pc=mv>.58?(r()<.3?_sage:_gold):_deep;
+        tall=(1.3-.55*smooth(Math.abs(clx),9,34))*(1+.5*smooth(vnoise(cs*.06+11,side*3),.55,.8));const mv=vnoise(cs*.014+7,clx*.014+3);pk=mv>.58?(mv-.58)*2.2:mv<.38?(.38-mv)*2.4:0;pc=mv>.58?(r()<.3?_sage:_gold):_deep;
         // wildflowers in some clumps (more in spring)
         if(nf<FLOWER_CAP&&b!=='town'&&r()<SZN.flowers*.3){const [fx,fz]=L(cs,clx),fc=pal[Math.floor(r()*pal.length)];for(let q=0;q<3&&nf<FLOWER_CAP;q++){fl.setMatrixAt(nf,Mt(fx+(r()-.5)*.5,cy+.3+r()*.25,fz+(r()-.5)*.5,1,1,1,r()*6));fl.setColorAt(nf,_fc.set(fc));nf++;}}}
       const a=r()*6.283,d=Math.sqrt(r())*.35,s=cs+Math.cos(a)*d,lx=clx+Math.sin(a)*d;if(Math.abs(lx)<8.05){im.setMatrixAt(i,Mt(0,-50,0,0,0,0));continue;}
@@ -746,7 +749,7 @@ function disposeChunk(g){have.delete(g.userData.index);clearObstacles(g.userData
 for(let i=-BEHIND;i<=AHEAD;i++)addChunk(makeChunk(i));
 
 /** Call every frame: queues new sections ahead, recycles old ones, builds within the time budget and places sections around the player. */
-const RL={n:0,v:MAT.road.userData.lamps.value};
+const RL={n:0,v:MAT.road.userData.lamps.value},_lv=new T.Vector3();
 function updateChunks(distance,base,yBase=0){wind.dist.value=distance;wind.base.value=base;
   const idx=Math.floor(distance/CH);
   if(idx!==G.lastIndex){G.lastIndex=idx;
@@ -759,6 +762,9 @@ function updateChunks(distance,base,yBase=0){wind.dist.value=distance;wind.base.
   for(let i=0;i<chunks.length;i++){const c=chunks[i],u=c.userData,d=u.start-distance;c.position.set(u.ox-base,-yBase,distance-u.start);
     if(u.lights&&RL.n<16&&MAT.road.userData.lampK.value>0)for(let j=0;j<u.lights.length&&RL.n<16;j+=4){const ld=u.lights[j+3]-distance;if(ld>-40&&ld<220)RL.v[RL.n++].set(u.lights[j]+c.position.x,u.lights[j+1]+c.position.y,u.lights[j+2]+c.position.z,1);}
     if(u.hi){const on=G.quality.hi>0&&d>-260&&d<G.quality.hi;u.hi.visible=on;for(let j=0;j<u.lo.length;j++)u.lo[j].visible=!on;}if(u.grass)u.grass.visible=d>-160&&d<G.quality.grass;if(u.flowers)u.flowers.visible=d>-160&&d<G.quality.grass*.8;if(u.deer)u.deer.visible=dusk;}
+  // and the lights of the cars on a wet road at night: red streaks behind the cars ahead, white from those coming
+  if(MAT.road.userData.lampK.value>0&&G.trafficList)for(const car of G.trafficList){if(RL.n>=16)break;const cu=car.userData,lp=cu.lampPos;if(!lp||!car.visible)continue;const dd=(cu.s??0)-distance;if(dd<-10||dd>180)continue;
+    const list=cu.direction<0?lp.head:lp.tail;for(const q of list.slice(0,2)){if(RL.n>=16)break;_lv.set(q[0],q[1],q[2]);car.localToWorld(_lv);RL.v[RL.n++].set(_lv.x,_lv.y,_lv.z,cu.direction<0?3:2);}}
   MAT.road.userData.lampN.value=RL.n;
   for(const c of chunks){const u=c.userData,d=u.start-distance;if(u.lake&&d>-150&&d<420&&Math.abs(d+30)<lakeD){lakeD=Math.abs(d+30);G.lakeLevel=u.lake.userData.level+c.position.y;}}
 }

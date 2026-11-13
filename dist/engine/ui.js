@@ -10,7 +10,8 @@ import {CARS, carById} from './garage.js';
 import {toast,resetRegion} from './hud.js';
 import {applyQuality,resetAdaptive} from './quality.js';
 import {pickWeather} from './weather.js';
-import {toggleSound, setRadio} from './audio.js';
+import {toggleSound, setRadio, playOwnMusic, nextOwnSong, setRadioVoice, ownMusic, announce} from './audio.js';
+import {diary, biomeKeys} from './diary.js';
 import {CAMERAS, glance} from './camera.js';
 import {resetVehicle} from './physics.js';
 import {traffic} from './actors.js';
@@ -199,6 +200,14 @@ showContinue();
 const continueObserver = new MutationObserver(() => { if (document.body.classList.contains('home')) showContinue(); });
 continueObserver.observe(document.body, {attributes: true, attributeFilter: ['class']});
 
+// your own music, and the radio voice
+$('#mymusic').onclick = () => $('#mymusic-files').click();
+$('#mymusic-files').onchange = async e => { const name = await playOwnMusic(e.target.files); if (!name) { $('#mymusic-now').textContent = 'No songs found in what you picked.'; return; }
+  $('#radioswitch').checked = false; showSound(state.sound); $('#mymusic-next').hidden = false; $('#mymusic').textContent = 'Choose other songs…'; };
+$('#mymusic-next').onclick = () => nextOwnSong();
+ownMusic.onSong = name => { $('#mymusic-now').textContent = 'Playing: ' + name; if (ownMusic.i > 0) setTimeout(() => announce(`That was ${ownMusic.names[ownMusic.i - 1]}. Here's ${name}.`), 400); };
+$('#radiovoice').onchange = e => { setRadioVoice(e.target.checked); try { localStorage.setItem('everway.voice', e.target.checked ? '1' : ''); } catch {} if (e.target.checked) announce('Hello, and welcome to Everway radio. I will let you know what is coming up on the road.'); };
+try { if (localStorage.getItem('everway.voice')) { $('#radiovoice').checked = true; setRadioVoice(true); } } catch {}
 onAchievement((title, desc) => { const t = $('#toast'); t.classList.add('toast-ach'); toast(`Achievement: ${title}. ${desc}.`); setTimeout(() => t.classList.remove('toast-ach'), 3400); });
 
 function renderJournal() {
@@ -215,6 +224,39 @@ function renderJournal() {
              : `<figure class="card"><div class="blank">Not found yet</div><figcaption><b>${n}</b>${place}</figcaption></figure>`; }).join('');
   $('#j-ach').innerHTML = ACHIEVEMENTS.map(([k, t, d]) => `<li class="${journal.got[k] ? 'got' : ''}"><b>${t}</b>${d}</li>`).join('');
   $('#j-code').textContent = journeyCode();
+  renderDiary();
+}
+/* the journey diary: a little map of one drive, with numbered pins listed underneath */
+const BIOME_TINT = {fields: '#a9c08a', desert: '#e2c495', mountain: '#9fb0a0', town: '#c9c3b0', coast: '#9cc3c6', planet: '#d39a7a', snow: '#e9eef0'};
+let diaryPick = null;
+function renderDiary() {
+  const trips = diary.trips.filter(t => t.pts.length > 1 || t.pins.length);
+  if (!trips.length) { $('#j-trips').innerHTML = '<p class="empty">Your drives will appear here, with the places you passed and the pictures you took.</p>'; $('#j-map').hidden = true; $('#j-pins').innerHTML = ''; return; }
+  $('#j-map').hidden = false;
+  if (diaryPick === null || !trips[diaryPick]) diaryPick = trips.length - 1;
+  $('#j-trips').innerHTML = trips.map((t, i) => `<button data-i="${i}" class="${i === diaryPick ? 'active' : ''}">${new Date(t.at).toLocaleDateString(undefined, {day: 'numeric', month: 'short'})} · ${t.km.toFixed(1)} km</button>`).slice(-10).join('');
+  $('#j-trips').querySelectorAll('button').forEach(b => b.onclick = () => { diaryPick = +b.dataset.i; renderDiary(); });
+  const t = trips[diaryPick], cv = $('#j-map'), c = cv.getContext('2d'), W = cv.width, H = cv.height, keys = biomeKeys();
+  const pts = t.pts.length > 1 ? t.pts : [[t.start, 0, 0], [t.end || t.start + 1, 0, 0]];
+  const s0 = pts[0][0], s1 = Math.max(pts[pts.length - 1][0], s0 + 1), xs = pts.map(p => p[1]), xm = Math.min(...xs), xM = Math.max(...xs), span = Math.max(xM - xm, 200);
+  const X = s => 40 + (s - s0) / (s1 - s0) * (W - 80), Y = x => H / 2 + ((x - (xm + xM) / 2) / span) * (H - 110);
+  c.clearRect(0, 0, W, H); c.fillStyle = '#ece6d6'; c.fillRect(0, 0, W, H);
+  for (let i = 0; i < pts.length - 1; i++) { c.fillStyle = BIOME_TINT[keys[pts[i][2]]] || '#cfc8b4'; c.fillRect(X(pts[i][0]), 0, X(pts[i + 1][0]) - X(pts[i][0]) + 1, H); }
+  c.lineJoin = c.lineCap = 'round'; c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 9; c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.stroke();
+  c.strokeStyle = '#3a3f3c'; c.lineWidth = 3.5; c.stroke();
+  const yAt = s => { let k = pts.findIndex(p => p[0] >= s); if (k <= 0) return Y(pts[Math.max(k, 0)][1]); const a = pts[k - 1], b = pts[k], f = (s - a[0]) / Math.max(1, b[0] - a[0]); return Y(a[1] + (b[1] - a[1]) * f); };
+  c.font = '600 15px system-ui, sans-serif'; c.textAlign = 'center';
+  let n = 0, flip = 1; const list = [];
+  for (const p of t.pins) {
+    const x = X(Math.min(Math.max(p.s, s0), s1)), y = yAt(p.s); flip = -flip;
+    if (p.kind === 'village') { c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); c.strokeStyle = '#3a3f3c'; c.lineWidth = 2; c.stroke(); c.fillStyle = '#2b2f2c'; c.fillText(p.name, x, y + flip * 22 + 5); }
+    else if (p.kind === 'place') { c.fillStyle = 'rgba(30,34,32,.75)'; c.font = '700 13px system-ui, sans-serif'; c.fillText(p.name.toUpperCase(), x + 4, 18); c.font = '600 15px system-ui, sans-serif'; }
+    else { n++; c.fillStyle = p.kind === 'photo' ? '#2f6db5' : '#b8302a'; c.beginPath(); c.arc(x, y - 16, 11, 0, 7); c.fill(); c.beginPath(); c.moveTo(x - 5, y - 8); c.lineTo(x, y - 1); c.lineTo(x + 5, y - 8); c.fill(); c.fillStyle = '#fff'; c.fillText(n, x, y - 11); list.push({...p, n}); }
+  }
+  c.fillStyle = '#2b2f2c'; c.beginPath(); c.arc(X(s0), Y(pts[0][1]), 6, 0, 7); c.fill(); c.beginPath(); c.arc(X(s1), Y(pts[pts.length - 1][1]), 6, 0, 7); c.fill();
+  const villages = t.pins.filter(p => p.kind === 'village').map(p => p.name);
+  $('#j-pins').innerHTML = list.map(p => `<li>${p.img ? `<img src="${p.img}" alt="">` : ''}<b>${p.n}. ${p.kind === 'photo' ? 'Your picture' : 'Postcard: ' + p.name}</b><small>${((p.s - t.start) / 1000).toFixed(1)} km into the drive</small></li>`).join('')
+    + (villages.length ? `<li><b>Villages passed</b><small>${villages.join(', ')}</small></li>` : '');
 }
 $('#journalbtn').onclick = () => { renderJournal(); $('#journal').hidden = false; $('#journal-close').focus(); };
 $('#journal-close').onclick = () => { $('#journal').hidden = true; };

@@ -128,7 +128,7 @@ export const groundAtX = (s, xw, P) => groundHeight(s, (xw - roadX(s)) * roadCos
 
 /** Sea level (absolute height). The road planner keeps the road a few metres above it. */
 export const SEA_LEVEL = -30;
-const BEACH = new T.Color('#cdbb8f');
+const BEACH = new T.Color('#cdbb8f'), DIRT = new T.Color('#776650');
 
 /** Colour and texture-layer weights for a ground point. `out` gets r,g,b; `splat` gets grass, rock, sand, snow.
  *  `rel` is the height above the road at this distance (snow follows the mountains, not the road). */
@@ -136,14 +136,19 @@ export function groundColor(s, side, h, rel, slope, P, c, splat, o = 0) {
   const ax = Math.abs(side), n1 = fbm(s * .018 + 3, side * .018, 3), n2 = vnoise(s * .11, side * .11);
   c.copy(P.ground).lerp(P.ground2, smooth(n1, .35, .68)).multiplyScalar(.86 + n2 * .24);
   if (P.crops > 0 && ax > 15 && ax < P.flat - 3) { const cell = hash2(Math.floor(s / 26), Math.floor(side / 16) + (side < 0 ? 999 : 0)); if (cell < .8) c.lerp(CROPS[Math.floor(cell / .8 * CROPS.length)], P.crops * .8); }
-  c.lerp(P.verge, (1 - smooth(ax, 8, 14)) * (.3 + .2 * n2));   // a verge kept a little shorter, not a painted stripe
+  // the verge: uneven in width and colour, with worn earth where cars pull over and people walk
+  const vw = 9 + 7 * vnoise(s * .02 + (side > 0 ? 3 : 9), 1.3);
+  c.lerp(P.verge, (1 - smooth(ax, vw - 3, vw)) * (.12 + .4 * n2 * vnoise(s * .05, side * .2)));
+  const worn = (1 - smooth(ax, 8.5, 11.5)) * smooth(vnoise(s * .06 + 2, side * .3 + 7), .6, .82);
+  c.lerp(DIRT, worn * .75);
   // grass holds on to moderate slopes (road cuttings stay green); bare rock only where it is steep
   const rk = smooth(slope, .72, 1.25), sn = smooth(rel + (n2 - .5) * 16, P.snowline, P.snowline + 9) * (1 - smooth(slope, 1.2, 1.8) * .7);
   let beach = 1 - smooth(h - SEA_LEVEL, .6, 3.2);
   if (G.trip?.kind === 'beach' && s > G.trip.end) beach = Math.max(beach, smooth(s, G.trip.end + 2, G.trip.end + 22));   // a wide sandy beach
   c.lerp(P.rock, rk); c.lerp(SNOW, sn); c.lerp(BEACH, beach * (1 - rk));
   const rw = rk * (1 - sn * .7), sd = Math.max(P.sand, beach) * (1 - rw) * (1 - sn);
-  splat[o] = Math.max(0, 1 - rw - sn - sd); splat[o + 1] = rw; splat[o + 2] = sd; splat[o + 3] = sn;
+  // (worn earth uses the sandy layer)
+  splat[o] = Math.max(0, 1 - rw - sn - Math.max(sd, worn * .6 * (1 - rw) * (1 - sn))); splat[o + 1] = rw; splat[o + 2] = Math.max(sd, worn * .6 * (1 - rw) * (1 - sn)); splat[o + 3] = sn;
 }
 
 /* Barriers along drops. The road sections draw them and the physics hits them, so both use this:

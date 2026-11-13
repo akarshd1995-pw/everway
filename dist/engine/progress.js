@@ -1,3 +1,4 @@
+import {diaryTrack, diaryStart, diaryPin} from './diary.js';
 // Progress kept in this browser: a saved journey to continue, a journal of all your driving,
 // achievements, and journey codes (the same code always gives the same road).
 import {G, state} from './state.js';
@@ -48,6 +49,7 @@ export function sawMoment(key) {
 let lastOdo = 0, saveTimer = 0, cleanKm = 0;
 /** Call every frame while driving. */
 export function trackDrive(dt) {
+  diaryTrack(dt);
   const d = Math.max(0, state.odometer - lastOdo) / 1000; lastOdo = state.odometer;
   if (d > 0) {
     journal.totalKm += d;
@@ -74,7 +76,7 @@ export function endDrive(reason) {
   journal.drives++; journal.crashes++; if (reason === 'sea') unlock('sea');
   store(KEY_LOG, journal); clearSave(); lastOdo = 0; cleanKm = 0;
 }
-export function startDrive() { lastOdo = state.odometer; }
+export function startDrive() { lastOdo = state.odometer; diaryStart(); }
 
 /* ---- postcards: one for each kind of landmark, with a small picture of the moment you passed it */
 export const POSTCARDS = [
@@ -84,7 +86,7 @@ export const POSTCARDS = [
 export function addPostcard(name, img) {
   journal.postcards = journal.postcards || {};
   if (journal.postcards[name]) return false;
-  journal.postcards[name] = {img, at: Date.now(), km: Math.round(journal.totalKm)};
+  journal.postcards[name] = {img, at: Date.now(), km: Math.round(journal.totalKm)}; diaryPin('postcard', name, img);
   if (POSTCARDS.every(([n]) => journal.postcards[n])) unlock('postcards');
   store(KEY_LOG, journal); return true;
 }

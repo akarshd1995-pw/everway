@@ -90,7 +90,7 @@ class Post{
           for(int i=0;i<5;i++){float fi=float(i),f=.35+fi*.42,rr=.025+.03*fract(fi*.37+.2);vec2 gp=sunUv+axis*f;float g=smoothstep(rr,rr*.2,length((vUv-gp)*aspect));
             c+=mix(vec3(.9,.6,.3),vec3(.3,.6,1.),fract(fi*.43))*g*.09*sv*uFlare;}
           float ring=length((vUv-(sunUv+axis*2.))*aspect);c+=vec3(.6,.75,1.)*smoothstep(.02,0.,abs(ring-.16))*.05*sv*uFlare;}
-        c=(c+b*bloom)*gain;c=aces(c);float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,saturation);c+=lift*(1.-c);
+        c=(c+b*bloom)*gain;c=aces(c);float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,saturation);{float gd=clamp((c.g-max(c.r,c.b))*3.,0.,1.);c=mix(c,vec3(l)*vec3(1.02,1.,.86)+(c-vec3(l))*.55,gd*.45);}c+=lift*(1.-c);
         // the film look you have chosen
         c*=uTint;c=clamp((c-.45)*uContrast+.45,0.,1.);l=dot(c,vec3(.2126,.7152,.0722));c=mix(c,vec3(l)*vec3(1.03,1.,.95),uMono);
         vec2 q=vUv-.5;c*=1.-dot(q,q)*vignette;c=srgb(c);

@@ -98,7 +98,7 @@ function card(p, size, dir, centre, cell, r, stretch = 1) {
 }
 
 /* ------------------------------------------------------------ broadleaf trees */
-function broadleaf(seed, kind) {
+function broadleaf(seed, kind, lite = false) {
   const r = rng(seed), H = kind === 'tall' ? 15 : kind === 'birch' ? 12 : 11 + r() * 3;
   const crownR = kind === 'tall' ? H * .24 : kind === 'birch' ? H * .2 : H * .33, crownY = kind === 'tall' ? H * .62 : kind === 'birch' ? H * .68 : H * .6, sq = kind === 'tall' ? 1.45 : kind === 'birch' ? 1.5 : .85;
   const wood = [], leaves = [], trunkTop = new T.Vector3((r() - .5) * .4, crownY - crownR * .35, (r() - .5) * .4), base = new T.Vector3(0, -.3, 0);
@@ -116,25 +116,25 @@ function broadleaf(seed, kind) {
   }
   wood.push(limb(trunkTop, centre.clone().add(new T.Vector3(0, crownR * .8 * sq, 0)), r0 * .55, r0 * .1));
   // the crown: leaf cards around the limb tips and over the outer shell, a few inside for depth
-  const nCards = kind === 'birch' ? 170 : 240;
+  const nCards = (kind === 'birch' ? 170 : 240) * (lite ? .28 : 1);
   for (let i = 0; i < nCards; i++) {
     let p;
     if (i % 3 === 0) { const t = tips[Math.floor(r() * tips.length)]; p = t.clone().add(new T.Vector3((r() - .5) * 2.2, (r() - .5) * 1.8, (r() - .5) * 2.2)); }
     else { const u = r() * 2 - 1, th = r() * 6.283, s = Math.sqrt(1 - u * u), rad = .62 + Math.pow(r(), .5) * .45; p = new T.Vector3(Math.cos(th) * s * crownR * rad, u * crownR * sq * rad, Math.sin(th) * s * crownR * rad).add(centre); if (p.y < crownY - crownR * sq * .75) p.y = crownY - crownR * sq * (.6 + r() * .15); }
     const dir = p.clone().sub(centre).normalize().add(new T.Vector3((r() - .5) * 1.2, (r() - .2) * .8, (r() - .5) * 1.2)).normalize();
-    leaves.push(card(p, (kind === 'birch' ? 1.5 : 2.1) * (.75 + r() * .5), dir, centre, Math.floor(r() * 4), r));
+    leaves.push(card(p, (kind === 'birch' ? 1.5 : 2.1) * (lite ? 1.75 : 1) * (.75 + r() * .5), dir, centre, Math.floor(r() * 4), r));
   }
   const parts = [{geometry: merge(wood), material: kind === 'birch' ? birchMat : barkMat}, {geometry: merge(leaves), material: leafMat}];
   return finish(parts, H, crownR * 2);
 }
 
 /* ------------------------------------------------------------ conifers */
-function conifer(seed, kind) {
+function conifer(seed, kind, lite = false) {
   const r = rng(seed), H = kind === 'spruce' ? 16 + r() * 4 : 13 + r() * 3, wood = [], sprays = [];
   const top = new T.Vector3(0, H, 0), r0 = H * .022;
   wood.push(limb(new T.Vector3(0, -.3, 0), top, r0, r0 * .08));
   const centreAxis = new T.Vector3();
-  const whorls = kind === 'spruce' ? 14 : 10, y0 = kind === 'spruce' ? H * .1 : H * .35;
+  const whorls = Math.round((kind === 'spruce' ? 14 : 10) * (lite ? .55 : 1)), y0 = kind === 'spruce' ? H * .1 : H * .35;
   for (let w = 0; w < whorls; w++) {
     const f = w / (whorls - 1), y = y0 + (H - y0 - .6) * f, reach = (1 - f) * H * (kind === 'spruce' ? .26 : .2) + .6, n = 6 + Math.floor(r() * 3) - Math.floor(f * 3);
     for (let i = 0; i < n; i++) {
@@ -142,18 +142,35 @@ function conifer(seed, kind) {
       const out = new T.Vector3(Math.cos(a), -droop, Math.sin(a)).normalize(), mid = new T.Vector3(0, y, 0).addScaledVector(out, reach * .55);
       centreAxis.set(0, y + reach * .2, 0);
       // a spray lies along the branch, tilted a little, two crossed cards for volume
-      for (let k = 0; k < 2; k++) {
-        const g = new T.PlaneGeometry(reach * 1.15, reach * .7);
+      for (let k = 0; k < (lite ? 1 : 2); k++) {
+        const g = new T.PlaneGeometry(reach * 1.15, reach * (lite ? 1.1 : .7));
         g.rotateX(-Math.PI / 2 + (k ? .55 : -.25)); g.rotateY(-a); g.translate(mid.x, mid.y - k * .15, mid.z);
         const nor = g.attributes.normal, pos = g.attributes.position;
         for (let v = 0; v < pos.count; v++) { _a.set(pos.getX(v), pos.getY(v), pos.getZ(v)).sub(centreAxis).normalize(); _a.y += .5; _a.normalize(); nor.setXYZ(v, _a.x, _a.y, _a.z); }
         sprays.push(g);
       }
-      if (reach > 1.4) wood.push(limb(new T.Vector3(0, y, 0), mid.clone().addScaledVector(out, reach * .3), r0 * .25, r0 * .06));
+      if (reach > 1.4 && !lite) wood.push(limb(new T.Vector3(0, y, 0), mid.clone().addScaledVector(out, reach * .3), r0 * .25, r0 * .06));
     }
   }
   const parts = [{geometry: merge(wood), material: barkMat}, {geometry: merge(sprays), material: needleMat}];
   return finish(parts, H, H * .5);
+}
+
+/* ------------------------------------------------------------ bushes */
+// a ragged, leafy bush: a few stems and twigs, leaf cards gathered in three to five uneven lobes
+function bush(seed) {
+  const r = rng(seed), H = 1.5 + r() * .5, W = 1.7 + r() * .6, wood = [], leaves = [], lobes = [];
+  const nL = 3 + Math.floor(r() * 3);
+  for (let i = 0; i < nL; i++) { const a = r() * 6.283, d = r() * W * .25; lobes.push({c: new T.Vector3(Math.cos(a) * d, H * (.45 + r() * .25), Math.sin(a) * d), rad: W * (.28 + r() * .14)}); }
+  for (const l of lobes) wood.push(limb(new T.Vector3((r() - .5) * .2, -.1, (r() - .5) * .2), l.c, .035, .012));
+  const centre = new T.Vector3(0, H * .45, 0);
+  for (let i = 0; i < 90; i++) {
+    const l = lobes[i % lobes.length], u = r() * 2 - 1, th = r() * 6.283, sq = Math.sqrt(1 - u * u), rad = l.rad * (.55 + Math.pow(r(), .6) * .55);
+    const p = new T.Vector3(Math.cos(th) * sq * rad, u * rad * .8, Math.sin(th) * sq * rad).add(l.c); if (p.y < .15) p.y = .15 + r() * .2;
+    const dir = p.clone().sub(centre).normalize().add(new T.Vector3((r() - .5) * 1.4, (r() - .2) * .9, (r() - .5) * 1.4)).normalize();
+    leaves.push(card(p, .75 * (.75 + r() * .5), dir, centre, Math.floor(r() * 4), r));
+  }
+  return finish([{geometry: merge(wood), material: barkMat}, {geometry: merge(leaves), material: leafMat}], H, W);
 }
 
 function finish(parts, H, W) {
@@ -162,7 +179,12 @@ function finish(parts, H, W) {
 }
 
 /** Ready-made tree models, by role, in the same form as downloaded ones. */
+const lite = list => list.map(m => Object.assign(m, {lite: true}));
 export const GEN_TREES = {
   tree: [broadleaf(11, 'round'), broadleaf(23, 'round'), broadleaf(37, 'tall'), broadleaf(41, 'birch')],
   pine: [conifer(5, 'pine'), conifer(17, 'spruce'), conifer(29, 'spruce')],
+  bush: [bush(3), bush(9), bush(19), bush(27)],
+  // lighter versions for the woods further from the road (fewer, larger leaf cards)
+  treeFar: lite([broadleaf(11, 'round', true), broadleaf(23, 'round', true), broadleaf(37, 'tall', true)]),
+  pineFar: lite([conifer(5, 'pine', true), conifer(17, 'spruce', true)]),
 };

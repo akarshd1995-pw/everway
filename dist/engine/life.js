@@ -1,7 +1,7 @@
 // Small signs of life around the road: smoke from chimneys, spray at waterfalls, a tractor working
 // a field (with a little dust behind it), sailing boats on the sea, turning windmill sails, the
 // lighthouse beam at night, falling water, and a word when a landmark is coming up.
-import {makeHuman, walkPose} from './human.js';
+import {makeHuman, walkPose, idlePose, sitPose, workPose} from './human.js';
 import * as T from '../three.module.js';
 import {G, state} from './state.js';
 import {scene, camera, renderer} from './render.js';
@@ -102,21 +102,75 @@ function figure(i) {
   const g = makeHuman({seed: i * 7 + 3, skirt: i % 4 === 1, top: TOPS[i % TOPS.length], bottom: LEGS[i % LEGS.length]});
   g.visible = false; scene.add(g); return g;
 }
-for (let i = 0; i < 10; i++) people.push({g: figure(i), on: false, s: 0, lx: 0, dir: 1, speed: 1.2, ph: i * 1.7});
+// what people do: walk along the verge, walk the dog, wait at the bus stop, sit outside a café, work in a field
+const pm = (c, r = .8) => new T.MeshStandardMaterial({color: c, roughness: r});
+function makeDog(seed) {
+  const g = new T.Group(), coat = pm(['#6b4a2f', '#d9c7a3', '#2a2622', '#b07a43'][seed % 4], .95), dark = pm('#1d1a18');
+  const body = new T.Mesh(new T.SphereGeometry(1, 12, 8), coat); body.scale.set(.15, .15, .34); body.position.y = .45; g.add(body);
+  const head = new T.Group(); head.position.set(0, .62, -.36); g.add(head);
+  const skull = new T.Mesh(new T.SphereGeometry(1, 10, 8), coat); skull.scale.set(.1, .1, .12); head.add(skull);
+  const snout = new T.Mesh(new T.SphereGeometry(1, 8, 6), coat); snout.scale.set(.055, .05, .09); snout.position.set(0, -.03, -.11); head.add(snout);
+  const nose = new T.Mesh(new T.SphereGeometry(.022, 6, 5), dark); nose.position.set(0, -.02, -.2); head.add(nose);
+  for (const sd of [-1, 1]) { const ear = new T.Mesh(new T.SphereGeometry(1, 6, 5), coat); ear.scale.set(.03, .07, .045); ear.position.set(sd * .07, .02, .02); ear.rotation.z = sd * .4; head.add(ear); }
+  const tail = new T.Group(); tail.position.set(0, .52, .32); g.add(tail);
+  const tm = new T.Mesh(new T.CylinderGeometry(.015, .03, .3, 6), coat); tm.position.y = .13; tail.add(tm); tail.rotation.x = .9;
+  const legs = [];
+  for (const [x, z] of [[-.08, -.22], [.08, -.22], [-.08, .22], [.08, .22]]) { const hp = new T.Group(); hp.position.set(x, .45, z); g.add(hp); const l = new T.Mesh(new T.CylinderGeometry(.03, .025, .42, 6), coat); l.position.y = -.21; hp.add(l); legs.push(hp); }
+  g.userData = {legs, tail, head}; g.visible = false; scene.add(g); return g;
+}
+function makeCafe() {
+  const g = new T.Group(), wood = pm('#6e5038'), metal = pm('#3a3f42', .5), cloth = pm('#e8e4da');
+  const seat = new T.Mesh(new T.BoxGeometry(.42, .04, .42), wood); seat.position.y = .46; g.add(seat);
+  const back = new T.Mesh(new T.BoxGeometry(.42, .45, .04), wood); back.position.set(0, .7, .2); g.add(back);
+  for (const [x, z] of [[-.18, -.18], [.18, -.18], [-.18, .18], [.18, .18]]) { const l = new T.Mesh(new T.CylinderGeometry(.015, .015, .46, 5), metal); l.position.set(x, .23, z); g.add(l); }
+  const table = new T.Mesh(new T.CylinderGeometry(.36, .36, .03, 18), cloth); table.position.set(0, .74, -.5); g.add(table);
+  const post = new T.Mesh(new T.CylinderGeometry(.03, .03, .74, 6), metal); post.position.set(0, .37, -.5); g.add(post);
+  const cup = new T.Mesh(new T.CylinderGeometry(.04, .035, .08, 10), pm('#f4f2ec', .4)); cup.position.set(.12, .8, -.42); g.add(cup);
+  const shade = new T.Mesh(new T.ConeGeometry(1.1, .45, 10, 1, true), pm(['#b8302a', '#2f6f4f', '#e6c35a'][Math.floor(Math.random() * 3)], .9)); shade.material.side = T.DoubleSide; shade.position.set(0, 2.25, -.5); g.add(shade);
+  const pole = new T.Mesh(new T.CylinderGeometry(.02, .02, 2.2, 5), metal); pole.position.set(0, 1.1, -.5); g.add(pole);
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.visible = false; scene.add(g); return g;
+}
+const hoe = (h) => { const g = new T.Group(), st = new T.Mesh(new T.CylinderGeometry(.015, .015, 1.4, 5), pm('#7a5a3a')); st.position.y = -.35; g.add(st);
+  const bl = new T.Mesh(new T.BoxGeometry(.18, .02, .1), pm('#55595b', .5)); bl.position.set(0, -1.05, -.05); g.add(bl); g.rotation.x = -.6; h.userData.j.arms[1].hand.add(g); g.visible = false; return g; };
+for (let i = 0; i < 14; i++) { const g = figure(i); people.push({g, on: false, s: 0, lx: 0, dir: 1, speed: 1.2, ph: i * 1.7, act: 'walk', dog: i % 3 === 0 ? makeDog(i) : null, cafe: i % 3 === 1 ? makeCafe() : null, hoe: i % 4 === 2 ? hoe(g) : null}); }
+const _hv = new T.Vector3();
 function updatePeople(dt, base, yBase) {
-  const d0 = state.distance;
+  const d0 = state.distance, day = dayAmt > .35 && (G.rainAmt || 0) < .4;
   for (const pp of people) {
     if (pp.on && (pp.s < d0 - 60 || pp.s > d0 + 420)) pp.on = false;
     if (!pp.on && Math.random() < dt * .6) {
-      const s = d0 + 60 + Math.random() * 330, v = villageNear(s), town = biomeAt(s) === 'town';
-      if ((town || (v && Math.abs(s - v.vc) < 140)) && !structureAt(s)) Object.assign(pp, {on: true, s, lx: (Math.random() < .5 ? -1 : 1) * (ROAD.half + 2.3 + Math.random() * 1.2), dir: Math.random() < .5 ? -1 : 1, speed: 1 + Math.random() * .5});
+      const s = d0 + 60 + Math.random() * 330, v = villageNear(s), town = biomeAt(s) === 'town', side = Math.random() < .5 ? -1 : 1, r = Math.random();
+      if ((town || (v && Math.abs(s - v.vc) < 140)) && !structureAt(s)) {
+        let act = 'walk', ps = s, lx = side * (ROAD.half + 2.3 + Math.random() * 1.2);
+        if (pp.dog && r < .7) act = 'dog';
+        else if (pp.cafe && day && r < .8 && (town || Math.abs(s - v.vc) < 70)) { act = 'sit'; lx = side * (ROAD.half + 4.2 + Math.random()); }
+        else if (v && r < .5 && v.stop > d0 + 40) { act = 'wait'; ps = v.stop - 2 - Math.random() * 3; lx = ROAD.half + 2.6 + Math.random() * .6; }
+        Object.assign(pp, {on: true, act, s: ps, lx, dir: Math.random() < .5 ? -1 : 1, speed: act === 'dog' ? .9 : 1 + Math.random() * .5});
+      } else if (pp.hoe && day && biomeAt(s) === 'fields' && !structureAt(s) && r < .25) Object.assign(pp, {on: true, act: 'field', s, lx: side * (16 + Math.random() * 22), dir: 1, yaw: Math.random() * 6.28});
     }
-    pp.g.visible = pp.on && !G.trip;
-    if (!pp.g.visible) continue;
-    pp.s += pp.dir * pp.speed * dt; pp.ph += dt * pp.speed * 3.4;
-    const P = terrainParams(pp.s), y = groundHeight(pp.s, pp.lx, P);
-    pp.g.position.set(roadX(pp.s) + sideX(pp.s, pp.lx) - base, y - yBase, d0 - pp.s); pp.g.rotation.y = roadYaw(pp.s) + (pp.dir > 0 ? 0 : Math.PI);
-    walkPose(pp.g, pp.ph * 1.6);
+    const vis = pp.on && !G.trip; pp.g.visible = vis;
+    if (pp.dog) pp.dog.visible = vis && pp.act === 'dog'; if (pp.cafe) pp.cafe.visible = vis && pp.act === 'sit'; if (pp.hoe) pp.hoe.visible = vis && pp.act === 'field';
+    if (!vis) continue;
+    const moving = pp.act === 'walk' || pp.act === 'dog';
+    if (moving) { pp.s += pp.dir * pp.speed * dt; pp.ph += dt * pp.speed * 3.4; } else pp.ph += dt;
+    const P = terrainParams(pp.s), y = groundHeight(pp.s, pp.lx, P), yaw = roadYaw(pp.s);
+    pp.g.position.set(roadX(pp.s) + sideX(pp.s, pp.lx) - base, y - yBase, d0 - pp.s);
+    if (pp.act === 'sit') {
+      // facing along the road, at a table outside a café
+      pp.g.rotation.y = yaw + Math.sign(pp.lx) * Math.PI / 2; sitPose(pp.g, pp.ph);
+      pp.cafe.position.copy(pp.g.position); pp.cafe.rotation.y = pp.g.rotation.y;
+    } else if (pp.act === 'wait') { pp.g.rotation.y = yaw - Math.PI / 2 + Math.sin(pp.ph * .1) * .4; idlePose(pp.g, pp.ph); }
+    else if (pp.act === 'field') { pp.g.rotation.y = pp.yaw; workPose(pp.g, pp.ph); }
+    else {
+      pp.g.rotation.y = yaw + (pp.dir > 0 ? 0 : Math.PI); walkPose(pp.g, pp.ph * 1.6);
+      if (pp.act === 'dog') {
+        // the dog trots a little ahead on the road side, tail wagging, nose down now and then
+        const ds = pp.s + pp.dir * 1.3, dl = pp.lx - Math.sign(pp.lx) * .7, du = pp.dog.userData;
+        pp.dog.position.set(roadX(ds) + sideX(ds, dl) - base, groundHeight(ds, dl, P) - yBase, d0 - ds); pp.dog.rotation.y = pp.g.rotation.y;
+        du.legs.forEach((l, k) => { l.rotation.x = Math.sin(pp.ph * 3.2 + (k === 0 || k === 3 ? 0 : Math.PI)) * .5; });
+        du.tail.rotation.z = Math.sin(pp.ph * 9) * .5; du.head.rotation.x = Math.max(0, Math.sin(pp.ph * .5)) ** 6 * .6;
+      }
+    }
   }
 }
 

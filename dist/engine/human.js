@@ -86,6 +86,7 @@ export function makeHuman(opts = {}) {
 /** A walking stride: legs swing from the hip, knees bend on the way forward, arms swing opposite, a gentle bob. */
 export function walkPose(h, phase, amount = 1) {
   const j = h.userData.j, sw = Math.sin(phase) * .42 * amount;
+  j.spine.rotation.z = 0; j.neck.rotation.set(0, 0, 0); if (j.legs) j.legs.forEach(l => { l.hp.rotation.z = 0; });
   if (j.legs) j.legs.forEach((l, i) => { const s = i ? -sw : sw, ph = phase + (i ? Math.PI : 0); l.hp.rotation.x = s; l.kn.rotation.x = -Math.max(0, Math.sin(ph + 1.3)) * .75 * amount; l.an.rotation.x = Math.max(0, -s) * .3; });
   j.arms.forEach((a, i) => { const s = i ? sw : -sw; a.sh.rotation.x = s * .8; a.el.rotation.x = .25 + Math.max(0, s) * .4; });
   j.hips.position.y = .95 + Math.abs(Math.cos(phase)) * .025 * amount; j.spine.rotation.y = sw * .12; j.spine.rotation.x = -.04;
@@ -97,4 +98,24 @@ export function ridePose(h, lean = .45, reach = .45, drop = .25) {
   j.spine.rotation.x = -lean; j.neck.rotation.x = lean * .75;
   const aim = Math.atan2(reach, drop);
   j.arms.forEach(arm => { arm.sh.rotation.x = lean + aim - .18; arm.el.rotation.x = .35; arm.sh.rotation.z = arm.sd * .14; });
+}
+
+/** Standing still: weight on one leg, a slight sway, now and then a look up the road. */
+export function idlePose(h, t) {
+  const j = h.userData.j; j.hips.position.y = .95; j.spine.rotation.set(-.02, 0, Math.sin(t * .7) * .02); j.neck.rotation.set(0, Math.sin(t * .23) * .5 * Math.max(0, Math.sin(t * .11)), 0);
+  if (j.legs) j.legs.forEach((l, i) => { l.hp.rotation.set(0, 0, l.sd * .04); l.kn.rotation.x = i ? -.12 : 0; l.an.rotation.x = 0; });
+  j.arms.forEach(a => { a.sh.rotation.set(.05, 0, a.sd * .07); a.el.rotation.x = .15; });
+}
+/** Sitting on a chair: thighs forward, shins down, hands on the table or in the lap; a sip now and then. */
+export function sitPose(h, t, seat = .48) {
+  const j = h.userData.j; j.hips.position.y = seat + .02; j.spine.rotation.set(.04, 0, 0); j.neck.rotation.set(-.05, Math.sin(t * .2) * .35, 0);
+  if (j.legs) j.legs.forEach(l => { l.hp.rotation.set(1.5, 0, l.sd * .08); l.kn.rotation.x = -1.45; l.an.rotation.x = 0; });
+  const sip = Math.max(0, Math.sin(t * .4)) ** 8;
+  j.arms.forEach((a, i) => { a.sh.rotation.set(.55 + (i ? sip * .9 : 0), 0, a.sd * .1); a.el.rotation.x = .9 + (i ? sip * 1.1 : 0); });
+}
+/** Working the ground with a hoe: bent forward, arms swinging the tool. */
+export function workPose(h, t) {
+  const j = h.userData.j, w = Math.sin(t * 2.2); j.hips.position.y = .9; j.spine.rotation.set(-.75 - w * .12, 0, 0); j.neck.rotation.set(.45, 0, 0);
+  if (j.legs) j.legs.forEach((l, i) => { l.hp.rotation.set(i ? .45 : .15, 0, l.sd * .1); l.kn.rotation.x = i ? -.5 : -.2; l.an.rotation.x = 0; });
+  j.arms.forEach((a, i) => { a.sh.rotation.set(1.1 + w * .35 + (i ? .15 : 0), 0, -a.sd * .12); a.el.rotation.x = .3; });
 }

@@ -100,7 +100,7 @@ float puddle;`)
       diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.86,.89,.92),clamp(sn,0.,1.)*.92);
       diffuseColor.rgb*=1.-paths*uSnowRoad*asphalt*.25;
       puddle*=1.-sn;} }`)
-  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.04,puddle);')
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.04,puddle);{float graze=1.-clamp(dot(normalize(vNormal),normalize(vViewPosition)),0.,1.);roughnessFactor*=mix(1.,.48,pow(graze,5.));}/* worn tarmac shines at a low angle: glare towards a low sun */')
   // raindrops landing in the puddles: little rings that spread and fade
   .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
   if(puddle>.05&&uRainNow>.05){vec2 g=vRW.xz*2.2,id=floor(g);vec2 rip=vec2(0.);
@@ -113,8 +113,8 @@ float puddle;`)
     for(int i=0;i<16;i++){if(float(i)>=uLampN)break;vec3 P=uLamps[i].xyz;float yr=vRW.y;
       float t=(C.y-yr)/max(C.y-(2.*yr-P.y),.01);vec2 Q=C.xz+(P.xz-C.xz)*t,dir=normalize(Q-C.xz+1e-4);vec2 dq=vRW.xz-Q;
       float along=dot(dq,dir),lat=dot(dq,vec2(-dir.y,dir.x))+sin(along*3.1+vRW.x)*.05;
-      acc+=exp(-lat*lat/(.05+abs(along)*.012))*exp(-along*along/(9.+t*4.))/(1.+length(Q-C.xz)*.03);}
-    totalEmissiveRadiance+=vec3(1.,.7,.4)*acc*uLampK*(.35+puddle*1.6);}`);};
+      vec3 lc=uLamps[i].w>2.5?vec3(1.,.95,.85):uLamps[i].w>1.5?vec3(1.,.13,.06)*1.6:vec3(1.,.7,.4);acc+=lc*exp(-lat*lat/(.05+abs(along)*.012))*exp(-along*along/(9.+t*4.))/(1.+length(Q-C.xz)*.03);}
+    totalEmissiveRadiance+=acc*uLampK*(.35+puddle*1.6);}`);};
 MAT.terrain=new T.MeshStandardMaterial({vertexColors:true,roughness:1,map:LAYERS.grass.diff,normalMap:LAYERS.grass.nor,normalScale:new T.Vector2(1,1)});
 
 MAT.terrain.onBeforeCompile=sh=>{const L=LAYERS;Object.assign(sh.uniforms,{tG:{value:L.grass.diff},tR:{value:L.rock.diff},tS:{value:L.sand.diff},tW:{value:L.snow.diff},nG:{value:L.grass.nor},nR:{value:L.rock.nor},nS:{value:L.sand.nor},nW:{value:L.snow.nor},uRefG:{value:L.grass.ref},uRefR:{value:L.rock.ref},uRefS:{value:L.sand.ref},uRefW:{value:L.snow.ref}});

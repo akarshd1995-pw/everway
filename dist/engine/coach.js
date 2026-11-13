@@ -26,7 +26,7 @@ export function buildCoach(color = '#2f6f8f', o = {}) {
   box(g, W + .02, 1.05, L - .5, glass, 0, base + H * .66, .05);                    // window band
   box(g, W + .03, .32, L - .2, paint, 0, base + H * .34, 0);                       // stripe
   box(g, W + .03, .12, L - .2, paint, 0, base + H * .25, 0);
-  if (van) { box(g, W - .1, 1, .04, glass, 0, base + H * .66, -L / 2 - .02); return lamps(g, base, L, W); }
+  if (van) { box(g, W - .1, 1, .04, glass, 0, base + H * .66, -L / 2 - .02); box(g, W - .2, .3, .25, dark, 0, base + .12, -L / 2 + .05); box(g, W - .2, .3, .25, dark, 0, base + .12, L / 2 - .05); wheels(g, W, [[-L / 2 + 1.0, true], [L / 2 - 1.1, false]], .36, dark); return lamps(g, base, L, W); }
   const ext = g.children.slice(); g.userData.exterior = ext;   // everything so far is outside the cab
   const screen = new T.MeshStandardMaterial({color: '#9fc4cf', metalness: .2, roughness: .05, transparent: true, opacity: .22, depthWrite: false});
   box(g, W - .1, 1.5, .04, screen, 0, base + H * .62, -L / 2 - .02);               // windscreen
@@ -56,6 +56,43 @@ export function buildCoach(color = '#2f6f8f', o = {}) {
   }
   return lamps(g, base, L, W);
 }
+
+/** Wheels with tyres, a steel hub and a dark arch, at the given positions along the body. */
+function wheels(g, W, at, r, dark, inset = .26) {
+  const tyreM = mat('#1c1f20', 0, .9), hubM = mat('#b9bec0', .8, .35);
+  for (const [z, front] of at) for (const sx of [-1, 1]) {
+    const steer = new T.Group(), pivot = new T.Group(); steer.position.set(sx * (W / 2 - inset), r, z); g.add(steer); steer.add(pivot);
+    const tyre = new T.Mesh(new T.CylinderGeometry(r, r, .3, 20), tyreM); tyre.rotation.z = Math.PI / 2; tyre.castShadow = true; pivot.add(tyre);
+    const hub = new T.Mesh(new T.CylinderGeometry(r * .58, r * .58, .32, 12), hubM); hub.rotation.z = Math.PI / 2; pivot.add(hub);
+    g.userData.wheels.push({pivot, steer, r, front});
+    box(g, .08, r * 1.15, r * 2.5, dark, sx * (W / 2 + .005), r * .95, z);
+  }
+}
+
+/** A lorry: a tall cab with a big windscreen, and a box body behind on a dark chassis, three axles. */
+export function buildLorry(color = '#c9cfd2', body = '#e9e9e4') {
+  const g = new T.Group(); g.userData = {type: 'coach', wheels: [], pedal: 0, exterior: []};
+  const W = 2.5, L = 11, cab = 2.3, base = .6, paint = mat(color, .35, .35), side = mat(body, .1, .6), glass = mat('#1d2a33', .6, .08), dark = mat('#202427', .1, .75), chrome = mat('#c9cfcf', .9, .25);
+  box(g, W, 2.3, cab, paint, 0, base + 1.3, -L / 2 + cab / 2, .2);                   // cab
+  box(g, W - .3, .9, .05, glass, 0, base + 1.85, -L / 2 - .01);                       // windscreen
+  for (const sx of [-1, 1]) box(g, .05, .7, .9, glass, sx * (W / 2 + .005), base + 1.9, -L / 2 + .7);   // door windows
+  box(g, W - .5, .45, .06, dark, 0, base + .75, -L / 2 - .02);                         // grille
+  box(g, W, .4, .3, dark, 0, base + .2, -L / 2 + .1);                                  // bumper
+  box(g, W - .2, .35, .9, paint, 0, base + 2.55, -L / 2 + .7, .15);                    // roof fairing
+  box(g, .7, .8, .9, dark, 0, base + 2.75, -L / 2 + 1.0);
+  for (const sx of [-1, 1]) box(g, .08, .55, .3, dark, sx * (W / 2 + .25), base + 1.95, -L / 2 + .3);   // mirrors
+  box(g, 1.2, .25, L - cab - .2, dark, 0, base + .1, cab / 2 + .1);                     // chassis
+  box(g, W, 2.75, L - cab - .4, side, 0, base + .4 + 1.38, cab / 2 + .2, .08);        // box body
+  box(g, W + .02, .14, L - cab - .4, paint, 0, base + .5, cab / 2 + .2);              // skirt stripe
+  for (const sx of [-1, 1]) box(g, .05, .5, 3.2, mat('#3a4044', .1, .8), sx * (W / 2 - .05), base + .1, 0);   // side guards
+  box(g, W - .1, 2.6, .05, mat('#d9dad5', .2, .5), 0, base + .4 + 1.38, L / 2 + .02);  // rear doors
+  box(g, .06, 2.6, .07, chrome, 0, base + 1.78, L / 2 + .05);
+  wheels(g, W, [[-L / 2 + 1.4, true], [L / 2 - 2.6, false], [L / 2 - 1.4, false]], .52, dark, .32);
+  return lamps(g, base, L, W);
+}
+
+/** A local bus: a coach in a town livery that stops at the village stops. */
+export function buildBus(color = '#b8302a') { const g = buildCoach(color, {L: 10.6, W: 2.5, H: 2.9, base: .45}); g.userData.bus = true; return g; }
 
 function lamps(g, base, L, W) {
   for (const sx of [-1, 1]) {

@@ -106,6 +106,8 @@
     <h3>Sound</h3>
     <label class="switch"><input type="checkbox" id="soundswitch"><span></span>Engine, road and nature sounds</label>
     <label class="switch"><input type="checkbox" id="radioswitch"><span></span>Music</label>
+    <div class="mymusic"><button id="mymusic" class="ghost small">Play my own music…</button><input type="file" id="mymusic-files" accept="audio/*" multiple hidden><button id="mymusic-next" class="ghost small" hidden>Next song</button><output id="mymusic-now"></output></div>
+    <label class="switch"><input type="checkbox" id="radiovoice"><span></span>Radio voice: names the places coming up</label>
     <label class="switch"><input type="checkbox" id="pedalswap"><span></span>Swap the pedals (steering wheel)</label>
     <h3>Map</h3>
     <div class="seg" id="mapmode"><button data-value="off">Off</button><button data-value="compass" class="active">Compass</button><button data-value="map">Mini-map</button></div>
@@ -147,6 +149,7 @@
     <div class="journal-head"><h2 id="journal-title">Journal</h2><button id="journal-close" class="round" aria-label="Close">✕</button></div>
     <div class="stats"><div><strong id="j-total">0</strong><span>km driven in all</span></div><div><strong id="j-longest">0</strong><span>km, longest drive</span></div><div><strong id="j-drives">0</strong><span>drives ended</span></div></div>
     <h3>Places</h3><div class="stamps" id="j-places"></div>
+    <h3>Journey diary</h3><div class="diary"><div class="trips" id="j-trips"></div><canvas id="j-map" width="900" height="300" aria-label="Map of the drive"></canvas><ol class="pins" id="j-pins"></ol></div>
     <h3>Postcards <output id="j-pcount">0</output></h3><div class="postcards" id="j-cards"></div>
     <h3>Achievements <output id="j-count">0</output></h3><ul class="achievements" id="j-ach"></ul>
     <h3>Journey code</h3>

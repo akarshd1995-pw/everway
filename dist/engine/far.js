@@ -37,11 +37,34 @@ const spare = [gridGeometry(), gridGeometry()];
 const meshes = spare.map(g => { const m = new T.Mesh(g, MAT.terrain); m.receiveShadow = true; m.visible = false; m.frustumCulled = false; scene.add(m); return m; });
 let front = 0;
 
+/* Distant woods: thousands of tree silhouettes (two crossed cards each) standing on the far hills, so the
+   forests carry on past the detailed land instead of being a painted colour. */
+const treeTex = kind => { const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d');
+  let seed = kind === 'pine' ? 7 : 3; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  x.fillStyle = '#4a3a2c'; x.fillRect(60, 170, 8, 86);
+  for (let i = 0; i < 520; i++) {
+    let px, py, rr;
+    if (kind === 'pine') { const t = Math.pow(rnd(), .8); py = 12 + t * 210; const half = 6 + t * 50; px = 64 + (rnd() - .5) * 2 * half; rr = 3 + rnd() * 5; }
+    else { const a = rnd() * 6.283, d = Math.sqrt(rnd()); px = 64 + Math.cos(a) * d * 56; py = 95 + Math.sin(a) * d * 80; rr = 4 + rnd() * 8; }
+    const l = 60 + rnd() * 60 + (kind === 'pine' ? 0 : (150 - py) * .25); x.fillStyle = `rgb(${l * .92 | 0},${l | 0},${l * .78 | 0})`;
+    x.beginPath(); x.arc(px, py, rr, 0, 6.283); x.fill();
+  }
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t; };
+const farTreeGeo = (() => { const a = new T.PlaneGeometry(1, 1), b = new T.PlaneGeometry(1, 1); a.translate(0, .5, 0); b.translate(0, .5, 0); b.rotateY(Math.PI / 2);
+  const g = new T.BufferGeometry(), P = [], U = [], Nn = [], I = [];
+  for (const q of [a, b]) { const o = P.length / 3; P.push(...q.attributes.position.array); U.push(...q.attributes.uv.array); for (let i = 0; i < q.attributes.position.count; i++) Nn.push(0, 1, 0); I.push(...Array.from(q.index.array, v => v + o)); }
+  g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(U, 2)); g.setAttribute('normal', new T.Float32BufferAttribute(Nn, 3)); g.setIndex(I); return g; })();
+const FAR_TREES = 22000;
+const farTreeMat = {broad: new T.MeshStandardMaterial({map: treeTex('broad'), alphaTest: .5, side: T.DoubleSide, roughness: .95}), pine: new T.MeshStandardMaterial({map: treeTex('pine'), alphaTest: .5, side: T.DoubleSide, roughness: .95})};
+const farTrees = meshes.map(m => { const o = {}; for (const k of ['broad', 'pine']) { const im = new T.InstancedMesh(farTreeGeo, farTreeMat[k], FAR_TREES); im.count = 0; im.frustumCulled = false; im.setColorAt(0, new T.Color()); m.add(im); o[k] = im; } return o; });
+const _tm = new T.Matrix4(), _tq = new T.Quaternion(), _tp = new T.Vector3(), _ts = new T.Vector3(), _ty = new T.Vector3(0, 1, 0);
+
 const _c = new T.Color(), _w = new T.Color(), canopy = new T.Color();
 /** Builds the far land around (s0, x0) into the hidden buffer, a few rows per step. */
 function* buildFar(s0, x0, covered) {
   const m = meshes[1 - front], g = m.geometry, A = g.attributes, cell = view.radius * 2 / N;
   const pos = A.position.array, nor = A.normal.array, col = A.color.array, uv = A.uv.array, spl = A.splat.array;
+  const ft = farTrees[1 - front], fc = {broad: 0, pine: 0}; let tr = 1;
   // snap the grid to whole cells so it does not shimmer when it moves
   const sx = Math.round(x0 / cell) * cell, ss = Math.round(s0 / cell) * cell;
   for (let r = 0; r <= N; r++) {
@@ -75,13 +98,27 @@ function* buildFar(s0, x0, covered) {
       if (woodsHere && Math.abs(side) > STRIP * .8 && h > SEA_LEVEL + 2) {
         const sd = side < 0 ? -1 : 1, w = vnoise(s * .0052 + sd * 7.3, side * .0061 + sd * 3.1) * .7 + vnoise(s * .019, side * .021) * .3;
         const k = clamp((w - .52) / .14, 0, 1) * (1 - clamp((Math.hypot(hx, hs) - .9) / .6, 0, 1)) * woodsHere;
-        if (k > 0) { const m = .82 + vnoise(s * .09, side * .09) * .36; _c.lerp(_w.copy(canopy).multiplyScalar(m), k * .85); }
+        if (k > 0) { const m = .82 + vnoise(s * .09, side * .09) * .36; _c.lerp(_w.copy(canopy).multiplyScalar(m), k * .85);
+          // and the trees themselves, on the land beyond the detailed sections
+          const ad = Math.abs(side);
+          if (ad > STRIP + cell * .5 && ad < STRIP + 1600 && !(covered && s > covered[0] + cell * 1.2 && s < covered[1] - cell * 1.2 && ad < STRIP - cell * 1.2)) {
+            const kind = bio === 'mountain' || bio === 'snow' || (bio === 'town' && w > .75) ? 'pine' : (w > .8 ? 'pine' : 'broad'), im = ft[kind], n = Math.round(k * (ad < STRIP + 600 ? 5 : 3));
+            for (let q = 0; q < n && fc[kind] < FAR_TREES; q++) {
+              tr = (tr * 16807) % 2147483647; const jx = (tr / 2147483647 - .5) * cell; tr = (tr * 16807) % 2147483647; const jz = (tr / 2147483647 - .5) * cell; tr = (tr * 16807) % 2147483647; const sz = .75 + tr / 2147483647 * .6;
+              const H = (kind === 'pine' ? 17 : 13) * sz;
+              _tp.set(pos[v * 3] + jx, h - .6, pos[v * 3 + 2] + jz); _tq.setFromAxisAngle(_ty, jx); _ts.set(H * (kind === 'pine' ? .45 : .7), H, H * (kind === 'pine' ? .45 : .7));
+              im.setMatrixAt(fc[kind], _tm.compose(_tp, _tq, _ts)); im.setColorAt(fc[kind], _w.copy(canopy).multiplyScalar(5.5 * (.8 + jz / cell * .4)));
+              fc[kind]++;
+            }
+          }
+        }
       }
       col[v * 3] = _c.r; col[v * 3 + 1] = _c.g; col[v * 3 + 2] = _c.b;
     }
     if (r % 10 === 9) yield;
   }
   for (const k in A) A[k].needsUpdate = true;
+  for (const k of ['broad', 'pine']) { const im = ft[k]; im.count = fc[k]; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; }
   return {s: ss, x: sx};
 }
 

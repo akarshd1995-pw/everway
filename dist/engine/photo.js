@@ -1,3 +1,4 @@
+import {diaryPin} from './diary.js';
 // Photo mode: the journey pauses, the display hides, and you can look around the vehicle freely
 // (drag to orbit, scroll to zoom), then save the picture as a PNG file.
 import {$} from './core.js';
@@ -18,7 +19,7 @@ export function exitPhoto() {
   document.body.classList.remove('photo'); $('#photobar').hidden = true;
 }
 /** Saves the next drawn frame as a PNG download. */
-export function savePicture() { G.wantPicture = true; }
+export function savePicture() { G.wantPicture = true; grabThumb(url => diaryPin('photo', 'A picture you took', url)); }
 /** Call `fn` with a small JPEG of the next drawn frame (for postcards). */
 const thumbs = []; export function grabThumb(fn) { thumbs.push(fn); }
 const small = document.createElement('canvas'); small.width = 384; small.height = 216;

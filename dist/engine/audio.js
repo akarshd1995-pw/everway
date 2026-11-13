@@ -188,10 +188,11 @@ function bicycle(v, dt) {
 }
 
 function road(v, st, dt) {
+  if (G.thump) { thump(G.thump); G.thump = 0; }
   const ride = state.ride, coach = ride === 'coach', air = state.airborne, side = Math.abs(state.side);
   const onGravel = !air && side > ROAD.half - .3 && state.offroad <= 0, onGrass = !air && state.offroad > 0;
   const k = clamp(v / 30, 0, 1);
-  set(nodes.tyre.gain.gain, air ? 0 : Math.min(.1, v * .003) * (coach ? 1.4 : ride === 'cycle' ? .4 : 1), .1);
+  set(nodes.tyre.gain.gain, air ? 0 : Math.min(.1, v * .003) * (coach ? 1.4 : ride === 'cycle' ? .4 : 1) * (1 + (G.roughRoad || 0) * .8), .1);
   set(nodes.tyre.f.frequency, 220 + v * 12, .2);
   set(nodes.roar.gain.gain, air || onGrass ? 0 : k * k * .03 * (1 + nodes.inTunnel * 1.5), .15);
   set(nodes.gravel.gain.gain, onGravel ? Math.min(.35, v * .02) : 0, .08); nodes.gravel.src.playbackRate.value = .6 + Math.min(1.6, v / 14);
@@ -271,7 +272,7 @@ function others(v, outside) {
     if (!n) { set(cv.g.gain, 0, .3); set(cv.tyre.gain.gain, 0, .3); return; }
     const u = n.u, lat = u.direction * ROAD.lane - me, dist = Math.hypot(n.d, lat) + 1;
     const rel = u.speed * u.direction - v, rate = n.d * rel / dist;          // how fast the distance is changing (m/s)
-    const dop = C_AIR / (C_AIR + rate), k = 1 / (1 + (dist / 14) ** 2), big = u.kind === 'tractor' || u.kind === 'van' ? .7 : 1;
+    const dop = C_AIR / (C_AIR + rate), k = 1 / (1 + (dist / 14) ** 2), big = u.kind === 'lorry' || u.kind === 'bus' ? .5 : u.kind === 'tractor' || u.kind === 'van' ? .7 : u.kind === 'motorbike' ? 1.6 : 1;
     set(cv.o.frequency, (u.kind === 'tractor' ? 38 : 55 + u.speed * 1.6) * big * dop, .05); set(cv.o2.frequency, (u.kind === 'tractor' ? 76 : 110 + u.speed * 3.2) * big * dop, .05);
     set(cv.f.frequency, 300 + 900 * k * dop, .1); set(cv.g.gain, .05 * k * outside, .08);
     set(cv.tyre.gain.gain, .045 * k * Math.min(1, u.speed / 15) * outside, .08); set(cv.tyre.f.frequency, 600 * dop, .05);
@@ -427,4 +428,41 @@ export async function setRadio(on) {
   if (!on && track) { const old = track.bus; old.gain.setTargetAtTime(0, ctx.currentTime, 1); setTimeout(() => old.disconnect(), 6000); track = null; }
   nextAt = 0;
   return on;
+}
+
+/* ------------------------------------------------------------------ your own music, and the radio voice */
+// Songs you choose from your device play like a car radio: shuffled, one after another. Nothing is uploaded.
+const own = {list: [], i: 0, el: null, src: null, gain: null, names: []};
+export async function playOwnMusic(files) {
+  const list = [...files].filter(f => f.type.startsWith('audio/') || /\.(mp3|m4a|aac|ogg|oga|wav|flac|opus)$/i.test(f.name));
+  if (!list.length) return null;
+  if (!state.sound) await toggleSound();
+  if (!ctx) return null;
+  await setRadio(false);                       // the made-up music stops while yours plays
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  own.list.forEach(u => URL.revokeObjectURL(u)); own.list = list.map(f => URL.createObjectURL(f)); own.names = list.map(f => f.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' '));
+  if (!own.el) {
+    own.el = new Audio(); own.el.crossOrigin = 'anonymous'; own.src = ctx.createMediaElementSource(own.el); own.gain = gainNode(.8); own.src.connect(own.gain).connect(master);
+    own.el.onended = () => nextOwnSong();
+  }
+  own.i = -1; return nextOwnSong();
+}
+export function nextOwnSong() {
+  if (!own.list.length || !own.el) return null;
+  own.i = (own.i + 1) % own.list.length; own.el.src = own.list[own.i]; own.el.play().catch(() => {});
+  const name = own.names[own.i]; own.onSong?.(name); return name;
+}
+export function stopOwnMusic() { if (own.el) own.el.pause(); }
+export const ownMusic = own;
+
+let voiceOn = false, presenter = null;
+export function setRadioVoice(on) { voiceOn = on; }
+/** The radio presenter says something short and calm; the music dips while they speak. */
+export function announce(text) {
+  if (!voiceOn || !('speechSynthesis' in window) || speechSynthesis.speaking) return;
+  if (!presenter) { const vs = speechSynthesis.getVoices(); presenter = vs.find(v => /en[-_]GB/i.test(v.lang) && /female|Serena|Kate|Libby|Sonia|Google UK English Female/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null; }
+  const u = new SpeechSynthesisUtterance(text); if (presenter) u.voice = presenter; u.rate = .92; u.pitch = 1; u.volume = .9;
+  const duck = k => { if (own.gain && ctx) own.gain.gain.setTargetAtTime(k, ctx.currentTime, .3); if (track && ctx) track.bus.gain.setTargetAtTime(k * 1.2, ctx.currentTime, .3); };
+  u.onstart = () => duck(.3); u.onend = u.onerror = () => duck(.8);
+  speechSynthesis.speak(u);
 }

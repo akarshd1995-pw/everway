@@ -70,6 +70,24 @@ Also new in v3, with or without the download:
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
 
+## Version 3.24: a more real world, and more life on the road
+
+- Natural colours: the land is softer and dustier, greens are olive rather than paint-box bright.
+- The verge: grass grows up to an uneven edge, the shoulder is earth and gravel, and there are worn patches.
+- Leafy bushes and hedges made of real leaf shapes instead of round blobs; lighter real trees out to 400 m,
+  and thousands of tree silhouettes on the distant hills so the forests carry on to the horizon.
+- Light on the road: low sun glares off the tarmac; on a wet night the road mirrors the street lamps and the
+  red and white lights of other cars.
+- Traffic: lorries, a local bus that stops in the villages, older cars, motorbikes that overtake you, a club
+  ride of cyclists; cars turn in at houses and pull into lay-bys with their hazard lights on.
+- People: walking the dog, waiting at the bus stop, sitting outside a café, working in a field.
+- Driving: some stretches of road are worn, with a busier ride and the odd pothole to thud over.
+- Your own music: pick songs on your device and they play like a car radio (nothing is uploaded); a radio
+  voice can name the villages and places coming up. Villages now have names.
+- Journey diary (in the Journal): a map of each drive with the villages and places you passed, and your
+  pictures and postcards pinned where you took them.
+- Car models: drop car model kits (.glb/.gltf) into `dist/assets/packs/` and run GET_ASSETS; they are used for traffic.
+
 ## Version 3.23: cars that look like real cars
 
 - Modern proportions: a higher shoulder and window line, bigger wheels that fill the arches, flatter ends.

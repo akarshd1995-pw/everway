@@ -13,7 +13,9 @@ const BIOMES={
   snow:{name:'THE QUIET NORTH',ground:'#e8eff1',ground2:'#d3e0e5',verge:'#d9e2e4',rock:'#7d898c',tree:'#47705f',flat:16,amp:52,ridge:1.1,terrace:0,crops:0,snowline:-200,mLow:'#8b9ea7',mHigh:'#b4c3c9',mSnow:1.4},
 };
 
-for(const b of Object.values(BIOMES))for(const k of ['ground','ground2','verge','rock','tree','mLow','mHigh'])b[k+'C']=C(b[k]);
+// natural colour: real land seen from the road is olive, dusty and softer than a paint-box green
+const NATURAL=c=>{const h={};c.getHSL(h);const green=h.h>.14&&h.h<.45;if(green){h.h+=(.2-h.h)*.22;h.s*=.66;h.l*=.93;}else{h.s*=.85;}return c.setHSL(h.h,h.s,h.l);};
+for(const b of Object.values(BIOMES))for(const k of ['ground','ground2','verge','rock','tree','mLow','mHigh'])b[k+'C']=b.alien?C(b[k]):NATURAL(C(b[k]));
 
 const SNOW=C('#eef4f6'),CROPS=['#c9b46a','#a8b85c','#6e9a49','#8c7b57','#b9a350','#93ad57'].map(C);
 

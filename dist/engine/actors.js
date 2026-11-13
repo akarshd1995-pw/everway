@@ -1,7 +1,7 @@
 import {carById} from './garage.js';
 import * as T from '../three.module.js';
 import {createVehicle} from '../vehicles.js';
-import {buildCoach,buildTractor,addCaravan} from './coach.js';
+import {buildCoach,buildTractor,addCaravan,buildLorry,buildBus} from './coach.js';
 import {scene,ASSETS} from './render.js';
 import {canvasTexture,flakeTex,glowTex} from './textures.js';
 import {G, state} from './state.js';
@@ -49,7 +49,7 @@ G.player=makePlayer('car');
 
 scene.add(G.player);
 
-const traffic=[],colors=['#d9dcdc','#1d2226','#8f979b','#7d1f1a','#24364f','#e8e6df','#4a5a4c','#6b6f72','#b8a68a'],styles=['sedan','hatch','suv','sedan','hatch','ev','sedan','hatch','gt'];
+const traffic=[];G.trafficList=traffic;const colors=['#d9dcdc','#1d2226','#8f979b','#7d1f1a','#24364f','#e8e6df','#4a5a4c','#6b6f72','#b8a68a'],styles=['sedan','hatch','suv','sedan','hatch','ev','sedan','hatch','gt'];
 
 /** A traffic car from a model kit you added: scaled to a real car's length, facing the way it drives. */
 function kitCar(mdl){const g=new T.Group(),k=4.4/mdl.size,body=new T.Group();
@@ -59,15 +59,22 @@ function kitCar(mdl){const g=new T.Group(),k=4.4/mdl.size,body=new T.Group();
   g.userData={type:'car',wheels:[],pedal:0,lampPos:{head:[[-W*.65,H*.38,-2.15],[W*.65,H*.38,-2.15]],tail:[[-W*.65,H*.42,2.15],[W*.65,H*.42,2.15]]}};
   addGlows(g);return g;}
 // a mix of cars, vans, a tractor and a car towing a caravan; lengths are used for following and collisions
-const KINDS=['car','car','van','car','tractor','car','caravan','car','van','car','car','car','car','van','car'];
-for(let i=0;i<15;i++){const kind=KINDS[i];let car;
-  if(kind==='van'){car=buildCoach(['#e9e9e4','#c9d2d6','#2f4f6f','#7d1f1a'][i%4],{L:5.3,W:2.05,H:2.15,base:.45,van:true});addGlows(car);}
+const KINDS=['car','car','van','car','tractor','motorbike','car','lorry','caravan','car','bus','classic','van','car','motorbike','car','lorry'];
+const CLASSIC=[['roadster','#7a1e1e'],['muscle','#2c4a3a'],['roadster','#d8cfb4'],['muscle','#3a4f6e']],BIKES=['#b8302a','#1d2226','#2f6db5','#e8e6df'];
+for(let i=0;i<KINDS.length;i++){const kind=KINDS[i];let car;
+  if(kind==='lorry'){car=buildLorry(['#c9cfd2','#2f4f6f','#7d1f1a','#e9e9e4'][i%4],['#e9e9e4','#d8d2c4','#e9e9e4','#3e5a4a'][i%4]);addGlows(car);}
+  else if(kind==='bus'){car=buildBus(['#b8302a','#2f6f4f','#1f4f8f'][i%3]);addGlows(car);}
+  else if(kind==='motorbike'){car=createVehicle('bike',BIKES[i%BIKES.length],true,{compact:true});car.userData.lampPos={head:[[0,1.05,-1.05]],tail:[[0,.85,1.05]]};addGlows(car);}
+  else if(kind==='classic'){const [st,c]=CLASSIC[i%CLASSIC.length];car=makeVehicle('car',c,false,st);}
+  else if(kind==='van'){car=buildCoach(['#e9e9e4','#c9d2d6','#2f4f6f','#7d1f1a'][i%4],{L:5.3,W:2.05,H:2.15,base:.45,van:true});addGlows(car);}
   else if(kind==='tractor'){car=buildTractor(i%2?'#2f7d3a':'#b4322a');addGlows(car);}
   else{const kit=ASSETS?.models?.car;car=kit&&kit.length&&kind==='car'?kitCar(kit[i%kit.length]):makeVehicle('car',colors[i%colors.length],false,styles[i%styles.length]);if(kind==='caravan')addCaravan(car);}
-  const u=car.userData;u.kind=kind;u.len=kind==='van'?5.3:kind==='tractor'?3.8:kind==='caravan'?4.4+5.9:4.4;
-  u.s=i*75+70;u.direction=i%3===0?-1:1;u.speed=kind==='tractor'?7+i%3:kind==='caravan'?14:u.direction===1?10+(i%5)*2.5:19+(i%4)*2;scene.add(car);traffic.push(car);}
+  const u=car.userData;u.kind=kind;u.len=kind==='van'?5.3:kind==='tractor'?3.8:kind==='caravan'?4.4+5.9:kind==='lorry'?11:kind==='bus'?10.6:kind==='motorbike'?2.2:4.4;
+  u.s=i*75+70;u.direction=i%3===0?-1:1;u.speed=kind==='tractor'?7+i%3:kind==='caravan'?14:kind==='lorry'?(u.direction===1?16:19):kind==='bus'?13:kind==='motorbike'?(u.direction===1?27:23):kind==='classic'?(u.direction===1?13:17):u.direction===1?10+(i%5)*2.5:19+(i%4)*2;
+  if(kind==='bus'||kind==='motorbike'&&i===5)u.direction=1;if(kind==='motorbike'&&u.direction===1)u.s=-60-i*20;scene.add(car);traffic.push(car);}
 // two cyclists at the edge of the road (cars overtake them)
-for(let i=0;i<2;i++){const c=createVehicle('cycle',['#2f6db5','#c0392b'][i],true,{compact:true});const u=c.userData;u.kind='cycle';u.len=1.9;u.s=260+i*480;u.direction=1;u.speed=5.2+i*.9;scene.add(c);traffic.push(c);}
+// and a club ride: three cyclists riding together, one behind the other
+for(let i=0;i<5;i++){const grp=i>=2,c=createVehicle('cycle',['#2f6db5','#c0392b','#e6b84a','#e6b84a','#e6b84a'][i],true,{compact:true});const u=c.userData;u.kind='cycle';u.len=1.9;u.s=grp?900+(i-2)*2.6:260+i*480;u.direction=1;u.speed=grp?6.4:5.2+i*.9;if(grp){u.group=true;u.gi=i-2;}scene.add(c);traffic.push(c);}
 // Rain streaks and snowflakes
 
 const RAIN=1800,rainHead=new Float32Array(RAIN*3),rainPos=new Float32Array(RAIN*6);

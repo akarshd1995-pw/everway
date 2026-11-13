@@ -319,3 +319,16 @@ body.bare .tripcard,body.replaying .tripcard{opacity:0;pointer-events:none}
 .paints button.active{box-shadow:0 0 0 3px var(--amber),inset 0 0 0 2px rgba(255,255,255,.6)}
 #look{flex-wrap:wrap}
 #look button{flex:1 1 40%}
+
+.diary{margin-bottom:8px}
+.diary .trips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.diary .trips button{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:0;background:rgba(255,255,255,.1);color:#fff;cursor:pointer}
+.diary .trips button.active{background:var(--sign);color:#fff}
+.diary canvas{width:100%;height:auto;display:block;border-radius:8px;background:#e9e4d6}
+.diary .pins{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.diary .pins li{background:rgba(255,255,255,.07);border-radius:8px;padding:6px 8px;font-size:13px;line-height:1.35}
+.diary .pins li img{width:100%;border-radius:4px;display:block;margin-bottom:4px}
+.diary .pins li small{display:block;opacity:.65}
+.diary .empty{opacity:.7;font-size:14px}
+.mymusic{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 10px}
+.mymusic output{font-size:12px;opacity:.75;flex-basis:100%}

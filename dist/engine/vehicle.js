@@ -4,7 +4,7 @@ import * as T from '../three.module.js';
 import {animateVehicle} from '../vehicles.js';
 import {scene} from './render.js';
 import {canvasTexture} from './textures.js';
-import {lerp} from './core.js';
+import {lerp, vnoise, smooth} from './core.js';
 import {G,state} from './state.js';
 import {ROAD,roadBank,roadCos,roadGrade,roadSurface,roadX,roadYaw,sideX} from './road.js';
 import {traffic} from './actors.js';
@@ -26,7 +26,10 @@ export function updatePlayer(dt, run, keys, yBase) {
   // suspension: the body rides on springs. It squats when you accelerate, dives when you brake, leans
   // out in bends, bounces over rough ground and compresses when it lands.
   const S = susp, k = h.lean ? 0 : 1, soft = state.ride === 'coach' ? 1.5 : state.ride === 'car' ? (h.soft || 1) : .6, v = state.speed;
-  const surf = state.airborne ? 0 : state.offroad > 0 ? 1 : Math.abs(state.side) > ROAD.half - .3 ? .45 : .06 + (G.trip ? .1 : 0);
+  // some stretches of road are worn and patched: a busier ride, and the odd pothole or sunken patch to thud over
+  const rough = G.roughRoad = smooth(vnoise(s * .004 + 3, 7.7), .58, .82);
+  const surf = state.airborne ? 0 : state.offroad > 0 ? 1 : Math.abs(state.side) > ROAD.half - .3 ? .45 : .06 + rough * .28 + (G.trip ? .1 : 0);
+  { const cell = Math.floor(s / 19); if (cell !== S.cell) { S.cell = cell; if (run && !state.airborne && v > 4 && state.offroad <= 0 && hash2(cell, 5) < .015 + rough * .14) { const k2 = Math.min(1, v / 22) * (state.ride === 'coach' ? .6 : 1); S.vh -= (.5 + rough * .6) * k2; S.vp += .25 * k2; G.thump = (.035 + rough * .05) * k2; } } }
   const bump = surf * Math.min(1, v / 12) * (Math.sin(G.elapsed * 17.3 + s * .7) * .6 + Math.sin(G.elapsed * 29.1 + s * 1.3) * .4);
   const land = state.hit > .5 && !S.landed ? (S.landed = true, -state.hit * .12) : (state.hit < .2 ? (S.landed = false, 0) : 0);
   const fz = (bump * .05 - S.h) * 180 - S.vh * 16, fp = ((state.lon || 0) * .0075 * soft * k - S.p) * 110 - S.vp * 14, fr = ((state.lat || 0) * .009 * soft * k - S.r) * 95 - S.vr * 12;
@@ -49,7 +52,7 @@ export function updatePlayer(dt, run, keys, yBase) {
 
 /** Moves traffic, keeps it in a window around the player and returns true if the player is too close to a car. */
 /** How many of the vehicles are on the road for each traffic setting. */
-export const TRAFFIC = {none: 0, light: 6, busy: 15};
+export const TRAFFIC = {none: 0, light: 6, busy: 17};
 export function updateTraffic(dt, run, base, yBase) {
   let nearMiss = false, lead = null, opp = null;
   const h = handling(), pside = state.side ?? ROAD.lane;
@@ -94,7 +97,7 @@ export function updateTraffic(dt, run, base, yBase) {
       if (stopAt !== null) target = Math.min(target, Math.max(0, (stopAt - u.s) * u.direction * .6));
       const lane = laneFor(u.direction, u.s); if (lane !== null && u.mode === 'drive') u.want = lane; else if (lane === null && u.mode === 'drive' && Math.abs(u.want - home) > .1 && !u.passOf) u.want = home;
       // overtaking: stuck behind something slow on a straight with the other lane clear for a good way
-      if (u.mode === 'drive' && u.kind !== 'tractor' && u.kind !== 'cycle' && ahead && ahead.gap < 25 && ahead.v < u.speed - 3) {
+      if (u.mode === 'drive' && u.kind !== 'tractor' && u.kind !== 'cycle' && u.kind !== 'bus' && ahead && ahead.gap < (u.kind === 'motorbike' ? 40 : 25) && ahead.v < u.speed - 3) {
         u.stuck = (u.stuck || 0) + dt;
         if (u.stuck > 2.5 && Math.abs(roadCurvature(u.s + u.direction * 120)) < .0025 && Math.abs(roadCurvature(u.s + u.direction * 240)) < .0025 && clearFor(u, 480)) { u.mode = 'pass'; u.want = -home; u.sig = -Math.sign(home); u.passOf = ahead.o || null; u.stuck = 0; }
       } else u.stuck = 0;
@@ -109,11 +112,15 @@ export function updateTraffic(dt, run, base, yBase) {
         target = 0;
         if (u.t > u.stopFor) { u.mode = 'leave'; u.want = home; u.sig = -Math.sign(home); u.t = 0; }
       } else if (u.mode === 'leave') { target = u.speed * .6; if (Math.abs(u.lat - home) < .2) { u.mode = 'drive'; u.sig = 0; } }
-      else if (u.mode === 'pull') { target = Math.max(0, Math.min(u.speed, (u.stopAt - u.s) * u.direction * .8)); if ((u.stopAt - u.s) * u.direction < 1.5) { u.mode = 'stop'; u.t = 0; u.sig = 2; } }
+      else if (u.mode === 'pull') { target = Math.max(0, Math.min(u.speed, (u.stopAt - u.s) * u.direction * .8)); if ((u.stopAt - u.s) * u.direction < 1.5) { u.mode = 'stop'; u.t = 0; u.sig = u.kind === 'bus' ? 0 : 2; } }
       // a few cars stop in villages
-      if (u.mode === 'drive' && u.direction === 1 && u.kind === 'car' && !u.stopped) {
-        const v = villageNear(u.s + 60);
-        if (v && Math.abs(u.s + 60 - v.stop) < 3 && hash2(i, Math.floor(v.stop)) < .4) { u.mode = 'pull'; u.stopAt = v.stop; u.want = ROAD.half + .9; u.sig = 1; u.stopFor = 8 + hash2(i, 9) * 10; u.stopped = true; }
+      if (u.mode === 'drive' && u.direction === 1 && (u.kind === 'car' || u.kind === 'bus' || u.kind === 'classic') && !u.stopped) {
+        const v = villageNear(u.s + 60), bus = u.kind === 'bus';
+        if (v && Math.abs(u.s + 60 - v.stop) < 3 && (bus || hash2(i, Math.floor(v.stop)) < .4)) { u.mode = 'pull'; u.stopAt = v.stop; u.want = ROAD.half + (bus ? 1.4 : .9); u.sig = 1; u.stopFor = bus ? 14 + hash2(i, 5) * 8 : 8 + hash2(i, 9) * 10; u.stopped = true; }
+        // turning in at a house in the village: indicate, slow down, turn off the road
+        else if (!bus && v && Math.abs(u.s - v.vc) < 50 && u.s - state.distance > 40 && u.s - state.distance < 260 && hash2(i, Math.floor(u.s / 40)) < .025) { u.mode = 'turnoff'; u.t = 3; u.turnSide = 1; u.stopped = true; }
+        // pulling into a lay-by on the open road for a while (hazard lights on)
+        else if (!bus && !v && u.s - state.distance > 60 && u.s - state.distance < 400 && hash2(i, Math.floor(u.s / 25)) < .006 && Math.abs(roadCurvature(u.s + 40)) < .003) { u.mode = 'pull'; u.stopAt = u.s + 45; u.want = ROAD.half + 1.6; u.sig = 1; u.stopFor = 10 + hash2(i, 3) * 14; u.stopped = true; u.hazard = true; }
       }
       // keep a safe gap behind whatever is ahead
       if (ahead && u.mode !== 'pass' && u.mode !== 'turnoff') target = Math.min(target, Math.max(0, ahead.v + (ahead.gap - 8) * .5));
@@ -155,7 +162,7 @@ export function updateTraffic(dt, run, base, yBase) {
 const amberM = new T.SpriteMaterial({map: glowTex(), color: '#ffa22a', transparent: true, depthWrite: false, blending: T.AdditiveBlending});
 function glowTex() { return canvasTexture(64, 64, (c) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, '#fff'); g.addColorStop(.35, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); }); }
 function indicators(car) {
-  const u = car.userData, L = (u.len || 4.4) / 2, W = u.kind === 'van' || u.kind === 'caravan' ? 1.02 : u.kind === 'tractor' ? .9 : .82, out = [];
+  const u = car.userData, L = (u.len || 4.4) / 2, W = u.kind === 'lorry' || u.kind === 'bus' ? 1.27 : u.kind === 'van' || u.kind === 'caravan' ? 1.02 : u.kind === 'tractor' ? .9 : u.kind === 'motorbike' ? .3 : .82, out = [];
   for (const [x, z] of [[-W, L - .1], [W, L - .1], [-W, -L + .1], [W, -L + .1]]) { const sp = new T.Sprite(amberM); sp.position.set(x, .85, u.kind === 'caravan' ? z * .45 : z); sp.scale.setScalar(.5); sp.visible = false; sp.userData.side = Math.sign(x); car.add(sp); out.push(sp); }
   return out;
 }
@@ -166,7 +173,7 @@ function clearFor(u, len) {
   const dp = (state.distance - u.s) * u.direction; if (dp > -10 && dp < len && Math.sign(state.side ?? 1) !== Math.sign(u.lat)) return false;
   return true;
 }
-function respawn(u, s) { u.s = s; u.lat = (u.direction === 1 ? 1 : -1) * (u.kind === 'cycle' ? ROAD.half - .8 : ROAD.lane); u.want = u.lat; u.mode = 'drive'; u.sig = 0; u.stopped = false; u.turn = undefined; u.cur = u.speed; }
+function respawn(u, s) { if (u.group) { if (!G.cycGroup || G.elapsed - G.cycGroup.t > 6) G.cycGroup = {t: G.elapsed, s}; s = G.cycGroup.s + u.gi * 2.6; } u.s = s; u.lat = (u.direction === 1 ? 1 : -1) * (u.kind === 'cycle' ? ROAD.half - .8 : ROAD.lane); u.want = u.lat; u.mode = 'drive'; u.sig = 0; u.stopped = false; u.turn = undefined; u.cur = u.speed; }
 /** At a fork a vehicle may follow the other road: an offset from our road, and whether it has gone. */
 const _off = {lat: 0, yaw: 0, y: undefined, gone: false};
 function forkOffset(u) {
