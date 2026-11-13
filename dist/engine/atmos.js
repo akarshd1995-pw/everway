@@ -94,7 +94,12 @@ export function updateAtmos(dt, run) {
   if (fog > .5 && !said.fog) { said.fog = true; toast('Fog. Headlights on, and take it gently.'); } else if (fog < .1) said.fog = false;
 
   // a storm darkens everything; lightning lights it all for an instant
-  if (storm > .01) { hemi.intensity *= 1 - .45 * storm; skyU.uZenith.value.multiplyScalar(1 - .5 * storm); skyU.uHorizon.value.multiplyScalar(1 - .35 * storm); scene.fog.color.multiplyScalar(1 - .3 * storm); }
+  if (storm > .01) {
+    hemi.intensity *= 1 - .45 * storm; skyU.uZenith.value.multiplyScalar(1 - .55 * storm); skyU.uHorizon.value.multiplyScalar(1 - .4 * storm); scene.fog.color.multiplyScalar(1 - .35 * storm);
+    // heavy, dark-bellied clouds rolling in, and the whole picture a little darker
+    cloudU.uLit.value.multiplyScalar(1 - .55 * storm); cloudU.uShade.value.multiplyScalar(1 - .6 * storm); cloudU.uCover.value = Math.max(cloudU.uCover.value, .9 + .1 * storm);
+    post.comp.uniforms.exposure.value *= 1 - .3 * storm;
+  }
   if (run && storm > .55) { nextStrike -= dt; if (nextStrike < 0) { strike(); nextStrike = rnd(6, 22) / storm; } }
   let flash = 0; for (const [t0, len, k] of flashes) { const e = G.elapsed - t0; if (e > 0 && e < len) flash = Math.max(flash, k * (1 - e / len)); }
   if (flashes.length && G.elapsed > flashes[flashes.length - 1][0] + 1) flashes = [];
