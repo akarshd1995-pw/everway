@@ -19,8 +19,17 @@ const MAT={
 };
 
 MAT.foliage.onBeforeCompile=sh=>{sh.uniforms.uTime=wind.time;sh.uniforms.uWind=wind.amount;
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float sway;uniform float uTime,uWind;')
-  .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat ph=dot(position.xz,vec2(.13,.11)),gust=.55+1.1*pow(sin(dot(position.xz,vec2(.021,.013))-uTime*.9)*.5+.5,3.);transformed.x+=(sin(uTime*1.9+ph)+.6)*sway*uWind*gust;transformed.z+=cos(uTime*1.4+ph*1.7)*sway*uWind*.6*gust;transformed.y-=sway*uWind*gust*.15;');};
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float sway;uniform float uTime,uWind;varying vec3 vLeafP;').replace('#include <uv_vertex>','#include <uv_vertex>\nvLeafP=position;')
+  .replace('#include <begin_vertex>','#include <begin_vertex>\nfloat ph=dot(position.xz,vec2(.13,.11)),gust=.55+1.1*pow(sin(dot(position.xz,vec2(.021,.013))-uTime*.9)*.5+.5,3.);transformed.x+=(sin(uTime*1.9+ph)+.6)*sway*uWind*gust;transformed.z+=cos(uTime*1.4+ph*1.7)*sway*uWind*.6*gust;transformed.y-=sway*uWind*gust*.15;');
+  // leafy surface: clumps of leaves with dark gaps between them and brighter leaf edges catching the light,
+  // instead of a smooth blob (bumped as well as shaded, so the light falls into the gaps)
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vLeafP;float lh(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+float leafN(vec3 p){vec3 i=floor(p),f=fract(p);float d=1.;for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){vec3 o=vec3(x,y,z);vec3 c=o+vec3(lh(i+o),lh(i+o+3.1),lh(i+o+7.7))-f;d=min(d,dot(c,c));}return sqrt(d);}`)
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+  float lf=leafN(vLeafP*2.6),lf2=leafN(vLeafP*6.1+3.);float leafy=smoothstep(.2,.75,lf)*.6+smoothstep(.15,.6,lf2)*.4;
+  normal=normalize(normal+vec3(dFdx(leafy),dFdy(leafy),0.)*6.);
+  diffuseColor.rgb*=.62+.55*(1.-leafy)+.12*lh(floor(vLeafP*6.));`);};
 /* ------------------------------------------- ground materials (PBR splat) */
 // Tileable procedural stand-ins, replaced by Poly Haven scans when they have been downloaded.
 

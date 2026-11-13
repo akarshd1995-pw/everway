@@ -136,7 +136,7 @@ export function groundColor(s, side, h, rel, slope, P, c, splat, o = 0) {
   const ax = Math.abs(side), n1 = fbm(s * .018 + 3, side * .018, 3), n2 = vnoise(s * .11, side * .11);
   c.copy(P.ground).lerp(P.ground2, smooth(n1, .35, .68)).multiplyScalar(.86 + n2 * .24);
   if (P.crops > 0 && ax > 15 && ax < P.flat - 3) { const cell = hash2(Math.floor(s / 26), Math.floor(side / 16) + (side < 0 ? 999 : 0)); if (cell < .8) c.lerp(CROPS[Math.floor(cell / .8 * CROPS.length)], P.crops * .8); }
-  c.lerp(P.verge, (1 - smooth(ax, 8, 14)) * .75);
+  c.lerp(P.verge, (1 - smooth(ax, 8, 14)) * (.3 + .2 * n2));   // a verge kept a little shorter, not a painted stripe
   // grass holds on to moderate slopes (road cuttings stay green); bare rock only where it is steep
   const rk = smooth(slope, .72, 1.25), sn = smooth(rel + (n2 - .5) * 16, P.snowline, P.snowline + 9) * (1 - smooth(slope, 1.2, 1.8) * .7);
   let beach = 1 - smooth(h - SEA_LEVEL, .6, 3.2);
