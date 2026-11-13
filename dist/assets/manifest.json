@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "source": "Poly Haven (CC0)",
+  "textures": {
+    "grass": {
+      "diff": "textures/grass_diff.jpg",
+      "nor": "textures/grass_nor.jpg",
+      "rough": "textures/grass_rough.jpg",
+      "id": "aerial_grass_rock"
+    },
+    "rock": {
+      "diff": "textures/rock_diff.jpg",
+      "nor": "textures/rock_nor.jpg",
+      "rough": "textures/rock_rough.jpg",
+      "id": "rock_face"
+    },
+    "sand": {
+      "diff": "textures/sand_diff.jpg",
+      "nor": "textures/sand_nor.jpg",
+      "rough": "textures/sand_rough.jpg",
+      "id": "aerial_beach_01"
+    },
+    "snow": {
+      "diff": "textures/snow_diff.jpg",
+      "nor": "textures/snow_nor.jpg",
+      "rough": "textures/snow_rough.jpg",
+      "id": "snow_02"
+    },
+    "asphalt": {
+      "diff": "textures/asphalt_diff.jpg",
+      "nor": "textures/asphalt_nor.jpg",
+      "rough": "textures/asphalt_rough.jpg",
+      "id": "asphalt_02"
+    }
+  },
+  "models": {
+    "desert": [
+      {
+        "file": "models/quiver_tree_01/quiver_tree_01_1k.gltf",
+        "id": "quiver_tree_01",
+        "name": "Quiver Tree 01"
+      },
+      {
+        "file": "models/quiver_tree_02/quiver_tree_02_1k.gltf",
+        "id": "quiver_tree_02",
+        "name": "Quiver Tree 02"
+      }
+    ],
+    "rock": [
+      {
+        "file": "models/boulder_01/boulder_01_1k.gltf",
+        "id": "boulder_01",
+        "name": "Boulder 01"
+      },
+      {
+        "file": "models/namaqualand_boulder_02/namaqualand_boulder_02_1k.gltf",
+        "id": "namaqualand_boulder_02",
+        "name": "Namaqualand Boulder 02"
+      },
+      {
+        "file": "models/namaqualand_boulder_03/namaqualand_boulder_03_1k.gltf",
+        "id": "namaqualand_boulder_03",
+        "name": "Namaqualand Boulder 03"
+      },
+      {
+        "file": "models/namaqualand_boulder_05/namaqualand_boulder_05_1k.gltf",
+        "id": "namaqualand_boulder_05",
+        "name": "Namaqualand Boulder 05"
+      }
+    ],
+    "shrub": [
+      {
+        "file": "models/fern_02/fern_02_1k.gltf",
+        "id": "fern_02",
+        "name": "Fern 02"
+      },
+      {
+        "file": "models/shrub_04/shrub_04_1k.gltf",
+        "id": "shrub_04",
+        "name": "Shrub 04"
+      },
+      {
+        "file": "models/shrub_sorrel_01/shrub_sorrel_01_1k.gltf",
+        "id": "shrub_sorrel_01",
+        "name": "Shrub Sorrel 01"
+      }
+    ]
+  },
+  "credits": [
+    "aerial_grass_rock (texture) - https://polyhaven.com/a/aerial_grass_rock",
+    "rock_face (texture) - https://polyhaven.com/a/rock_face",
+    "aerial_beach_01 (texture) - https://polyhaven.com/a/aerial_beach_01",
+    "snow_02 (texture) - https://polyhaven.com/a/snow_02",
+    "asphalt_02 (texture) - https://polyhaven.com/a/asphalt_02",
+    "quiver_tree_01 (model) - https://polyhaven.com/a/quiver_tree_01",
+    "quiver_tree_02 (model) - https://polyhaven.com/a/quiver_tree_02",
+    "boulder_01 (model) - https://polyhaven.com/a/boulder_01",
+    "namaqualand_boulder_02 (model) - https://polyhaven.com/a/namaqualand_boulder_02",
+    "namaqualand_boulder_03 (model) - https://polyhaven.com/a/namaqualand_boulder_03",
+    "namaqualand_boulder_05 (model) - https://polyhaven.com/a/namaqualand_boulder_05",
+    "fern_02 (model) - https://polyhaven.com/a/fern_02",
+    "shrub_04 (model) - https://polyhaven.com/a/shrub_04",
+    "shrub_sorrel_01 (model) - https://polyhaven.com/a/shrub_sorrel_01"
+  ]
+}
