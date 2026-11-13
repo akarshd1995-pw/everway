@@ -68,6 +68,9 @@ float rn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(rh(i)
 float puddle;`)
   .replace('#include <map_fragment>',`#include <map_fragment>
   { vec2 q=vMapUv; float asphalt=step(.105,q.x)*step(q.x,.895);
+    // the shoulder beyond the edge line: worn gravel and dust, not a painted strip
+    { float sh=1.-asphalt,gn=rn(vec2(q.y*14.,q.x*90.))*.6+rn(vec2(q.y*3.,q.x*20.))*.4;
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.36,.34,.3)*(.72+.5*gn),sh*.85); }
     // long, slow changes in tone so the 24 m texture never visibly repeats
     float macro=rn(vec2(q.y*.31,q.x*2.7))*.6+rn(vec2(q.y*1.7+9.,q.x*7.))*.4;
     diffuseColor.rgb*=mix(1.,.86+.26*macro,asphalt);
@@ -143,7 +146,7 @@ vec3 layers(vec2 b,vec4 sw){vec3 x=vec3(0.);if(sw.x>.01)x+=st(tG,b*2.)*sw.x;if(s
   .replace('#include <normal_fragment_maps>','vec3 mapN=vec3(.5,.5,1.)*0.;if(sw.x>.01)mapN+=st(nG,uG)*sw.x;if(sw.y>.01)mapN+=st(nR,uR)*sw.y;if(sw.z>.01)mapN+=st(nS,uS)*sw.z;if(sw.w>.01)mapN+=st(nW,uW)*sw.w;mapN=mapN/max(sw.x*step(.01,sw.x)+sw.y*step(.01,sw.y)+sw.z*step(.01,sw.z)+sw.w*step(.01,sw.w),1e-3)*2.-1.;mapN.xy*=normalScale;normal=normalize(tbn*mapN);');};
 // Grass blades: one instanced mesh per road section near the camera.
 
-const bladeGeo=(()=>{const g=new T.BufferGeometry(),w=.028,p=[-w,0,0,w,0,0,-w*.75,.4,.02,w*.75,.4,.02,-w*.4,.75,.06,w*.4,.75,.06,0,1,.12],c=[],n=[];for(let i=0;i<p.length;i+=3){const t=.32+.68*p[i+1];c.push(t,t,t);n.push(0,1,0);}
+const bladeGeo=(()=>{const g=new T.BufferGeometry(),w=.016,p=[-w,0,0,w,0,0,-w*.75,.4,.02,w*.75,.4,.02,-w*.4,.75,.06,w*.4,.75,.06,0,1,.12],c=[],n=[];for(let i=0;i<p.length;i+=3){const t=.32+.68*p[i+1];c.push(t,t,t);n.push(0,1,0);}
   g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('normal',new T.Float32BufferAttribute(n,3));g.setAttribute('color',new T.Float32BufferAttribute(c,3));g.setIndex([0,1,2,1,3,2,2,3,4,3,5,4,4,5,6]);return g;})();
 
 MAT.grass=new T.MeshStandardMaterial({vertexColors:true,roughness:.85,side:T.DoubleSide});
