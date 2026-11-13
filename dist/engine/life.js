@@ -1,6 +1,7 @@
 // Small signs of life around the road: smoke from chimneys, spray at waterfalls, a tractor working
 // a field (with a little dust behind it), sailing boats on the sea, turning windmill sails, the
 // lighthouse beam at night, falling water, and a word when a landmark is coming up.
+import {makeHuman, walkPose} from './human.js';
 import * as T from '../three.module.js';
 import {G, state} from './state.js';
 import {scene, camera, renderer} from './render.js';
@@ -97,16 +98,11 @@ function trail(dt, run) {
 // People walking along the verge in villages and towns: a simple figure with swinging arms and legs.
 const people = [], SKIN = ['#e8c4a4', '#c99a74', '#8d5a3b', '#f0d2b8'], TOPS = ['#c0392b', '#2f6db5', '#e6b84a', '#3e7a54', '#7d5ba6', '#ecebe6', '#2b2f33'], LEGS = ['#2c3e57', '#3b3b3b', '#6b5a45', '#1f2a36'];
 function figure(i) {
-  const g = new T.Group(), m = c => new T.MeshStandardMaterial({color: c, roughness: .8}), skin = m(SKIN[i % 4]), top = m(TOPS[i % 7]), leg = m(LEGS[i % 4]);
-  const box = (w, h, d, mat, x, y, z) => { const b = new T.Mesh(new T.BoxGeometry(w, h, d), mat); b.position.set(x, y, z); b.castShadow = true; return b; };
-  g.add(box(.42, .62, .24, top, 0, 1.18, 0));
-  const head = new T.Mesh(new T.SphereGeometry(.13, 10, 8), skin); head.position.y = 1.64; head.castShadow = true; g.add(head);
-  const limb = (w, h, mat, x, y) => { const p = new T.Group(); p.position.set(x, y, 0); const b = box(w, h, w, mat, 0, -h / 2, 0); p.add(b); g.add(p); return p; };
-  g.userData.legs = [limb(.15, .86, leg, -.1, .88), limb(.15, .86, leg, .1, .88)];
-  g.userData.arms = [limb(.11, .62, top, -.28, 1.46), limb(.11, .62, top, .28, 1.46)];
+  // a properly built person (see human.js): jointed limbs, hands and shoes, a face and hair; some in skirts
+  const g = makeHuman({seed: i * 7 + 3, skirt: i % 4 === 1, top: TOPS[i % TOPS.length], bottom: LEGS[i % LEGS.length]});
   g.visible = false; scene.add(g); return g;
 }
-for (let i = 0; i < 8; i++) people.push({g: figure(i), on: false, s: 0, lx: 0, dir: 1, speed: 1.2, ph: i * 1.7});
+for (let i = 0; i < 10; i++) people.push({g: figure(i), on: false, s: 0, lx: 0, dir: 1, speed: 1.2, ph: i * 1.7});
 function updatePeople(dt, base, yBase) {
   const d0 = state.distance;
   for (const pp of people) {
@@ -120,8 +116,7 @@ function updatePeople(dt, base, yBase) {
     pp.s += pp.dir * pp.speed * dt; pp.ph += dt * pp.speed * 3.4;
     const P = terrainParams(pp.s), y = groundHeight(pp.s, pp.lx, P);
     pp.g.position.set(roadX(pp.s) + sideX(pp.s, pp.lx) - base, y - yBase, d0 - pp.s); pp.g.rotation.y = roadYaw(pp.s) + (pp.dir > 0 ? 0 : Math.PI);
-    const sw = Math.sin(pp.ph) * .5, [l1, l2] = pp.g.userData.legs, [a1, a2] = pp.g.userData.arms;
-    l1.rotation.x = sw; l2.rotation.x = -sw; a1.rotation.x = -sw * .8; a2.rotation.x = sw * .8;
+    walkPose(pp.g, pp.ph * 1.6);
   }
 }
 

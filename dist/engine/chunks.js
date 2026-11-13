@@ -753,6 +753,8 @@ function updateChunks(distance,base,yBase=0){wind.dist.value=distance;wind.base.
     for(let i=chunks.length-1;i>=0;i--){const ci=chunks[i].userData.index;if(ci<idx-BEHIND||ci>idx+AHEAD){disposeChunk(chunks[i]);chunks.splice(i,1);}}
     for(let k=idx-BEHIND;k<=idx+AHEAD;k++)if(!scheduler.has(k)&&!have.has(k)){const v=VER;scheduler.add(k,chunkBuilder(k),c=>{if(v!==VER&&c.userData.index>=STALE){recycle(c);G.lastIndex=-999;}else addChunk(c);});}}
   scheduler.run();
+  // safety: a section from before a fork must never be driven into; if its replacement is not ready yet, build it now
+  for(let i=chunks.length-1;i>=0;i--){const u=chunks[i].userData;if(u.stale&&u.index<=idx+1){const k=u.index,job=scheduler.jobs.get(k);if(job){let st;while(!(st=job.generator.next()).done);scheduler.jobs.delete(k);job.onDone(st.value);}if(chunks[i]?.userData.stale&&chunks[i].userData.index===k)addChunk(makeChunk(k));}}
   const t=state.time,dusk=(t>5.3&&t<8.6)||(t>17&&t<20.6);RL.n=0;let lakeD=1e9;G.lakeLevel=null;
   for(let i=0;i<chunks.length;i++){const c=chunks[i],u=c.userData,d=u.start-distance;c.position.set(u.ox-base,-yBase,distance-u.start);
     if(u.lights&&RL.n<16&&MAT.road.userData.lampK.value>0)for(let j=0;j<u.lights.length&&RL.n<16;j+=4){const ld=u.lights[j+3]-distance;if(ld>-40&&ld<220)RL.v[RL.n++].set(u.lights[j]+c.position.x,u.lights[j+1]+c.position.y,u.lights[j+2]+c.position.z,1);}
@@ -765,8 +767,11 @@ function updateChunks(distance,base,yBase=0){wind.dist.value=distance;wind.base.
  * (they are far ahead, so the change is not seen). Sections still being built are dropped when done. */
 let VER=0,STALE=1e9;
 function refreshFrom(s){VER++;STALE=Math.floor(s/CH);
-  // the old sections stay on screen until their replacements are ready (nearest first)
+  // the old sections stay on screen until their replacements are ready (nearest first); but a section you
+  // are in or about to enter is rebuilt straight away, so the old land never stands across the new road
+  const near=Math.floor(state.distance/CH)+1;
   for(const c of chunks)if(c.userData.index>=STALE&&!c.userData.stale){c.userData.stale=true;have.delete(c.userData.index);}
+  for(let k=STALE;k<=near;k++)addChunk(makeChunk(k));
   G.lastIndex=-999;}
 /** Rebuild every section around `distance` at once (scenery, road or difficulty changed, or a jump). Unfinished jobs are completed and recycled so nothing leaks. */
 function rebuild(distance,near=false){scheduler.jobs.delete('far');scheduler.drain(c=>{have.delete(c.userData.index);recycle(c);});

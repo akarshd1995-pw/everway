@@ -21,7 +21,9 @@ export class Scheduler {
     if (!this.jobs.size) { this.stats.lastMs = 0; return; }
     const t0 = performance.now();
     let worst = 0, steps = 0;
-    outer: for (const [key, job] of this.jobs) {
+    // road sections come before the far land: a section of road you are about to reach matters most
+    const order = [...this.jobs].sort((a, b) => (a[0] === 'far') - (b[0] === 'far'));
+    outer: for (const [key, job] of order) {
       for (;;) {
         const now = performance.now();
         if (steps > 0 && now - t0 + this.typical > this.budget) break outer;
