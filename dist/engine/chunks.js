@@ -1,7 +1,8 @@
 import * as T from '../three.module.js';
 import {MODEL_LIMITS} from '../assets.js';
+import {GEN_TREES} from './realtrees.js';
 import {C,fbm,hash2,lerp,rand,smooth,vnoise} from './core.js';
-import {ASSETS,scene} from './render.js';
+import {ASSETS,scene,QUALITY} from './render.js';
 import {ROAD_TILE,RW,signUV} from './textures.js';
 import {MAT,bladeGeo,wind} from './materials.js';
 import {Batch,M,Mt,blobT,boxT,coneT,cylT,gambrelT,prismT,quadT,rockT,sphT,tpl} from './templates.js';
@@ -55,6 +56,9 @@ function buildRoad(start,ox){
 // triangle limit and only a few are placed per road section; the rest use the light built-in models.
 
 const USABLE_MODELS=ASSETS&&Object.keys(ASSETS.models).length?ASSETS.models:null;
+// realistic trees near the road: downloaded tree models if you have them, otherwise the generated ones
+const TREE_MODELS={tree:USABLE_MODELS?.tree||GEN_TREES.tree,pine:USABLE_MODELS?.pine||GEN_TREES.pine};
+const GEN_LIMIT={tree:42,pine:46};
 
 function makeChunk(index){const gen=chunkBuilder(index);let step;while(!(step=gen.next()).done);return step.value;}
 // Builds a road section in small steps so new sections never cause a stutter (see the frame loop).
@@ -67,7 +71,7 @@ function* chunkBuilder(index){
   const L=(s,lx)=>[roadX(s)+sideX(s,lx)-ox,-(s-start)];
   const near={solid:new Batch(),foliage:new Batch({sway:true})},far={solid:new Batch(),foliage:new Batch({sway:true})};
   const lamps=new Batch(),windows=new Batch(),pools=new Batch({uv:true}),signs=new Batch({uv:true}),wires=[];
-  const HQ=USABLE_MODELS,perChunk={},lod={solid:new Batch(),foliage:new Batch({sway:true})},inst=new Map();let forced=null;
+  const realTrees=state.realTrees!==false&&G.quality!==QUALITY.low,HQ=realTrees?{...(USABLE_MODELS||{}),...TREE_MODELS}:USABLE_MODELS,perChunk={},lod={solid:new Batch(),foliage:new Batch({sway:true})},inst=new Map(),instCol=new Map();let forced=null;
   // the ground as it is drawn: exact near the road; further out, between the terrain mesh's points (its
   // columns there are tens of metres apart, so on a rounded hill the drawn ground is lower than the exact one)
   const gridH=new Map(),gridAt=(row,ci)=>{const k=row*64+ci;let h=gridH.get(k);if(h===undefined){const ss=start+row*5;h=groundHeight(ss,LXS[ci],terrainParams(ss));gridH.set(k,h);}return h;};
@@ -82,13 +86,17 @@ function* chunkBuilder(index){
     B.add=(t,m,c,o)=>{const e=m.elements,s=start-e[14],lx=(e[12]-(roadX(s)-ox))*roadCos(s);if(inRiver(s,lx))return;add(t,m,c,o);};}
   if(TE<start+CH+40)for(const B of [near.solid,near.foliage,far.solid,far.foliage,lamps,windows,pools,signs,lod.solid,lod.foliage]){const add=B.add.bind(B);
     B.add=(t,m,c,o)=>{const e=m.elements,s=start-e[14];if(s>TE+8){const lx=(e[12]-(roadX(s)-ox))*roadCos(s);if(Math.abs(lx)<45||s>TE+60)return;}add(t,m,c,o);};}
-  function place(role,s,lx,size,rot){const list=HQ?.[role],lim=MODEL_LIMITS[role];if(!list||Math.abs(lx)>90||(perChunk[role]||0)>=lim.perChunk)return false;
+  function place(role,s,lx,size,rot,tint){const list=HQ?.[role],gen=list&&list[0]?.generated,lim=gen?{perChunk:GEN_LIMIT[role]}:MODEL_LIMITS[role];if(!list||Math.abs(lx)>(gen?140:90)||(perChunk[role]||0)>=lim.perChunk)return false;
     const mdl=list[Math.floor(r()*list.length)];let k=size/mdl.size;const room=Math.abs(lx)-8.6,half=mdl.width*k/2;
     if(half>room){k=room*2/mdl.width;if(k*mdl.height<size*.45)return false;} // too wide for this spot: keep the low-poly version
     perChunk[role]=(perChunk[role]||0)+1;const [x,z]=L(s,lx);
-    if(!inst.has(mdl))inst.set(mdl,[]);inst.get(mdl).push(M(x,groundY(s,lx)-.08,z,k,k,k,rot??r()*6.283));return true;}
+    if(!inst.has(mdl)){inst.set(mdl,[]);instCol.set(mdl,[]);}inst.get(mdl).push(M(x,groundY(s,lx)-.08,z,k,k,k,rot??r()*6.283));
+    instCol.get(mdl).push(tint?tint.clone().multiplyScalar(2.1+r()*.5):new T.Color(1,1,1));return true;}
   // A real model near the camera, the low-poly version (in 'lod') when far away.
-  const withModel=(role,size,fn)=>(s,lx,...a)=>{const hq=place(role,s,lx,size()*(a[0]||1));if(hq)forced=lod;fn(s,lx,...a);forced=null;};
+  const withModel=(role,size,fn)=>(s,lx,...a)=>{
+    // a leafy tree takes its leaf colour from the season (none in winter: then the bare low-poly one stands)
+    let tint=null;if(role==='tree'||role==='pine'){tint=role==='pine'?bio.treeC.clone().offsetHSL(0,-.05,-.04):leaves(bio.treeC);if(!tint){fn(s,lx,...a);return;}}
+    const hq=place(role,s,lx,size()*(a[0]||1),undefined,tint);if(hq)forced=lod;fn(s,lx,...a);forced=null;};
   const SZS=start+CH/2,SZ=seasonName(SZS),snowy=b==='snow',winter=!!season(SZS).snow&&seasonal(b)>0,alien=b==='planet',SZN=season(SZS);
   const leaves=base=>leafColor(base,r,b,SZS);
   // bare branches for leafless trees in winter
@@ -653,7 +661,7 @@ function* chunkBuilder(index){
   yield;
   const add=m=>m&&g.add(m);
   if(inst.size){const hi=new T.Group();g.add(hi);g.userData.hi=hi;
-    for(const [mdl,mats] of inst)for(const p of mdl.parts){const im=acquire('inst:'+p.geometry.uuid,()=>new T.InstancedMesh(p.geometry,p.material,INST_CAP)),n=Math.min(mats.length,INST_CAP);im.count=n;for(let i=0;i<n;i++)im.setMatrixAt(i,mats[i]);im.instanceMatrix.needsUpdate=true;im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();hi.add(im);}
+    for(const [mdl,mats] of inst)for(const p of mdl.parts){const cap=mdl.generated?64:INST_CAP,im=acquire('inst:'+p.geometry.uuid,()=>new T.InstancedMesh(p.geometry,p.material,cap)),n=Math.min(mats.length,cap);im.count=n;for(let i=0;i<n;i++)im.setMatrixAt(i,mats[i]);im.instanceMatrix.needsUpdate=true;if(p.material.userData.tint){const cols=instCol.get(mdl);for(let i=0;i<n;i++)im.setColorAt(i,cols[i]);im.instanceColor.needsUpdate=true;}im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();hi.add(im);}
     g.userData.lo=[lod.solid.mesh(MAT.solid,{cast:true}),lod.foliage.mesh(MAT.foliage,{cast:true})].filter(Boolean);g.userData.lo.forEach(m=>g.add(m));}
   // cat's eyes down the centre line: dull studs by day, glinting in the headlights at night
   if(b!=='planet'){const cat=acquire('cats',()=>new T.InstancedMesh(catGeo,CATS,12));let nc=0;
