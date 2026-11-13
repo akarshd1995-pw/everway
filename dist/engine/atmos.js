@@ -114,12 +114,14 @@ export function updateAtmos(dt, run) {
   if (G.player !== beamCar) fitBeams(G.player);
   const lightsOn = headlights[0] && headlights[0].intensity > .1 ? 1 : 0;
   beamMat.uniforms.uK.value = lightsOn * Math.min(1, fog * 1.2 + rain * .45 + (G.snowAmt || 0) * .5) * (.35 + .65 * nightAmt) * (G.beamK || 1);
-  for (const b of beams) b.visible = beamMat.uniforms.uK.value > .01 && state.cam !== 1;
+  for (const b of beams) b.visible = beamMat.uniforms.uK.value > .01 && state.cam !== 1 && !G.noBeams;
 
   // snow settles while it falls and melts slowly afterwards; in winter a little lies at the edges anyway
   const base = state.season === 'winter' ? .3 : 0, snowing = G.snowAmt || 0;
-  G.snowCover = Math.max(base, Math.min(1, (G.snowCover || 0) + (snowing > .3 ? dt / 80 * snowing : -dt / (base ? 600 : 300))));
-  if (biomeAt(state.distance) === 'desert') G.snowCover = Math.max(0, G.snowCover - dt / 20);
+  // (it clears much faster away from winter and the snowy mountains, and at once in the desert)
+  const coldPlace = state.season === 'winter' || biomeAt(state.distance) === 'snow';
+  G.snowCover = Math.max(base, Math.min(1, (G.snowCover || 0) + (snowing > .3 ? dt / 80 * snowing : -dt / (coldPlace ? 600 : 45))));
+  if (biomeAt(state.distance) === 'desert') G.snowCover = 0;
   MAT.road.userData.snow.value = G.snowCover;
   carSnow.value = Math.max(0, G.snowCover * (snowing > .3 ? 1 : .8));
 
