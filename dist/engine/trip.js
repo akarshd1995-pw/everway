@@ -29,7 +29,9 @@ const CARD = {beach: 'A quiet beach', farm: 'A farm down a lane', viewpoint: 'A 
 
 /** The side road on leg L (odd legs only, between the forks), or null. */
 const cache = new Map();
+const SIDE_ROADS = false;   // side roads are switched off: the journey stays on the main road
 export function tripFor(L) {
+  if (!SIDE_ROADS) return null;
   if (state.biome !== 'auto' && state.biome === 'planet') return null;
   if (L < 1 || L % 2 !== 1) return null;
   const key = L + ':' + roadSeed() + ':' + state.difficulty + ':' + JSON.stringify(state.roadSwitches || []) + ':' + (state.routeOffset || 0) + ':' + state.biome;

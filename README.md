@@ -65,7 +65,7 @@ Also new in v3, with or without the download:
 - W / Up: accelerate in manual mode. S / Down: brake. A D / Left Right: steer.
 - Drag with the mouse (or the right stick): look around while driving.
 - C: switch camera. P: photo mode. R: replay the last two minutes. H: hide the display. Space: pause.
-- At a fork: Left / Right while autodrive steers, or Q / E when you drive. At a side road: T to turn off (and T to go back).
+- At a fork: Left / Right while autodrive steers, or Q / E when you drive.
 - L: full beam / dipped headlights (autodrive dips them by itself). F: flash your headlights.
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
@@ -129,7 +129,7 @@ Driving
 
 Roads
 - Forks are real: choose the other way and your road bends off that way and carries on as a road of its own, while the road you did not take curves away where it really goes. Your turns are saved with the journey and journey codes.
-- Side roads: between forks, a brown sign points down a lane to a beach on the coast, a farm in the countryside, or a viewpoint in the hills, and you can see the lane leaving the road. Choose "Turn off" on the card (or press T) and the road takes you there, about half a kilometre down to a turning circle. A beach slopes down to the sea, a farm has its house, barn and animals, and a viewpoint looks out over a drop. You get a postcard when you arrive. "Back to the main road" (or T) returns you to where you turned off.
+- Side roads (switched off in v3.22; set SIDE_ROADS in trip.js to bring them back): between forks, a brown sign points down a lane to a beach on the coast, a farm in the countryside, or a viewpoint in the hills, and you can see the lane leaving the road. Choose "Turn off" on the card (or press T) and the road takes you there, about half a kilometre down to a turning circle. A beach slopes down to the sea, a farm has its house, barn and animals, and a viewpoint looks out over a drop. You get a postcard when you arrive. "Back to the main road" (or T) returns you to where you turned off.
 - Villages have two side streets each, and towns one every 240 m, with houses facing the street and street lamps.
 
 Driving
