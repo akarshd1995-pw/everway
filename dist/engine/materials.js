@@ -181,5 +181,15 @@ function cloudShadows(mat){const prev=mat.onBeforeCompile;mat.onBeforeCompile=(s
     if(uCloud>0.){vec2 cp=(vCloudP+vec2(uCBase,-uCDist))*.0045+vec2(uCloudT*.018,uCloudT*.006);
       float n=cn(cp)*.55+cn(cp*2.13+3.7)*.3+cn(cp*4.7+9.1)*.15;float sh=1.-uCloud*smoothstep(.48,.66,n);
       reflectedLight.directDiffuse*=sh;reflectedLight.directSpecular*=sh;}`);};}
+// weathering on everything built (walls, roofs, fences, posts): a fine grain, broad blotches of grime and
+// faint rain streaks running down, so surfaces read as plaster, timber and stone rather than flat paint
+MAT.solid.onBeforeCompile=sh=>{
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWthP;').replace('#include <uv_vertex>','#include <uv_vertex>\nvWthP=position;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vWthP;float wh(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+float wn(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(wh(i),wh(i+vec3(1,0,0)),f.x),mix(wh(i+vec3(0,1,0)),wh(i+vec3(1,1,0)),f.x),f.y),mix(mix(wh(i+vec3(0,0,1)),wh(i+vec3(1,0,1)),f.x),mix(wh(i+vec3(0,1,1)),wh(i+vec3(1,1,1)),f.x),f.y),f.z);}`)
+  .replace('#include <color_fragment>',`#include <color_fragment>
+  { float grain=wn(vWthP*9.)*.5+wn(vWthP*23.)*.5,blot=wn(vWthP*.6),streak=wn(vec3(vWthP.x*5.,vWthP.y*.35,vWthP.z*5.));
+    diffuseColor.rgb*=.93+.12*grain;diffuseColor.rgb*=1.-.1*smoothstep(.55,.85,blot);diffuseColor.rgb*=1.-.07*smoothstep(.6,.9,streak); }`);};
 for(const m of [MAT.terrain,MAT.solid,MAT.foliage,MAT.grass,MAT.road])cloudShadows(m);
 export {CLOUD,cloudShadows,wind,MAT,tnoise,tfbm,makeLayer,avgColor,LAYERS,bladeGeo};
