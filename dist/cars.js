@@ -103,30 +103,30 @@ const STYLES = {
     n: 2.7, m: 2.3, mb: 3.4, tw: 0.84, cockpit: [0.385, 0.7],
   },
   sedan: {
-    len: 4.6, wheelU: [0.19, 0.79], r: 0.34, track: 0.79, tyreW: 0.22,
-    w: [[0, 0.72], [0.035, 0.86], [0.12, 0.91], [0.85, 0.91], [0.96, 0.86], [1, 0.74]],
-    top: [[0, 0.6], [0.04, 0.72], [0.2, 0.82], [0.29, 0.86], [0.78, 0.9], [0.93, 0.9], [1, 0.78]],
-    mid: [[0, 0.52], [0.1, 0.6], [0.9, 0.62], [1, 0.56]],
-    bot: [[0, 0.34], [0.05, 0.24], [0.95, 0.24], [1, 0.36]],
-    n: 3.2, m: 2.6, mb: 4, tw: 0.9,
-    cabin: {u0: 0.285, u1: 0.81, roof: [[0.285, 0.86], [0.44, 1.42], [0.66, 1.44], [0.81, 0.9]], w: 0.84, tw: 0.76},
+    len: 4.75, wheelU: [0.185, 0.79], r: 0.34, track: 0.8, tyreW: 0.235,
+    w: [[0, 0.8], [0.035, 0.88], [0.12, 0.92], [0.85, 0.92], [0.97, 0.9], [1, 0.84]],
+    top: [[0, 0.76], [0.04, 0.85], [0.18, 0.92], [0.29, 0.97], [0.78, 1.0], [0.95, 0.99], [1, 0.94]],
+    mid: [[0, 0.62], [0.1, 0.76], [0.9, 0.8], [1, 0.7]],
+    bot: [[0, 0.36], [0.05, 0.27], [0.95, 0.28], [1, 0.38]],
+    n: 3.4, m: 2.4, mb: 4.4, tw: 0.9,
+    cabin: {u0: 0.285, u1: 0.81, roof: [[0.285, 0.97], [0.45, 1.46], [0.66, 1.47], [0.81, 1.0]], w: 0.84, tw: 0.74},
   },
   hatch: {
-    len: 4.05, wheelU: [0.18, 0.81], r: 0.33, track: 0.78, tyreW: 0.21,
-    w: [[0, 0.72], [0.04, 0.85], [0.12, 0.9], [0.88, 0.9], [0.97, 0.86], [1, 0.8]],
-    top: [[0, 0.6], [0.045, 0.72], [0.2, 0.84], [0.3, 0.88], [0.9, 0.92], [1, 0.9]],
-    mid: [[0, 0.52], [0.1, 0.6], [0.9, 0.63], [1, 0.6]],
-    bot: [[0, 0.34], [0.05, 0.24], [0.96, 0.26], [1, 0.36]],
-    n: 3.2, m: 2.6, mb: 4, tw: 0.9,
-    cabin: {u0: 0.3, u1: 0.975, roof: [[0.3, 0.88], [0.46, 1.45], [0.88, 1.43], [0.975, 0.98]], w: 0.85, tw: 0.78},
+    len: 4.1, wheelU: [0.17, 0.82], r: 0.33, track: 0.79, tyreW: 0.225,
+    w: [[0, 0.8], [0.04, 0.87], [0.12, 0.91], [0.88, 0.91], [0.97, 0.89], [1, 0.85]],
+    top: [[0, 0.72], [0.045, 0.84], [0.2, 0.94], [0.3, 0.98], [0.9, 1.02], [1, 0.99]],
+    mid: [[0, 0.62], [0.1, 0.75], [0.9, 0.79], [1, 0.74]],
+    bot: [[0, 0.36], [0.05, 0.27], [0.96, 0.29], [1, 0.38]],
+    n: 3.4, m: 2.4, mb: 4.4, tw: 0.9,
+    cabin: {u0: 0.3, u1: 0.975, roof: [[0.3, 0.98], [0.47, 1.49], [0.88, 1.47], [0.975, 1.06]], w: 0.85, tw: 0.76},
   },
   // a modern low fastback coupé: long bonnet, sloping glass roof, big wheels, tinted glass
   coupe: {
     len: 4.6, wheelU: [0.17, 0.8], r: 0.37, track: 0.85, tyreW: 0.27,
     w: [[0, 0.74], [0.035, 0.88], [0.12, 0.95], [0.5, 0.97], [0.86, 0.96], [0.96, 0.9], [1, 0.8]],
     top: [[0, 0.56], [0.04, 0.66], [0.18, 0.74], [0.3, 0.79], [0.78, 0.86], [0.93, 0.85], [1, 0.74]],
-    mid: [[0, 0.47], [0.1, 0.55], [0.9, 0.6], [1, 0.54]],
-    bot: [[0, 0.3], [0.05, 0.19], [0.95, 0.21], [1, 0.33]],
+    mid: [[0, 0.5], [0.1, 0.64], [0.9, 0.7], [1, 0.6]],
+    bot: [[0, 0.3], [0.05, 0.21], [0.95, 0.22], [1, 0.33]],
     n: 3.6, m: 3, mb: 4.4, tw: 0.9,
     cabin: {u0: 0.31, u1: 0.88, roof: [[0.31, 0.8], [0.47, 1.27], [0.6, 1.29], [0.88, 0.87]], w: 0.8, tw: 0.68},
   },
@@ -165,20 +165,20 @@ const STYLES = {
     len: 4.8, wheelU: [0.16, 0.8], r: 0.37, track: 0.86, tyreW: 0.28, exhausts: 2,
     w: [[0, 0.74], [0.035, 0.88], [0.12, 0.95], [0.5, 0.96], [0.85, 0.98], [0.96, 0.92], [1, 0.8]],
     top: [[0, 0.56], [0.04, 0.66], [0.2, 0.74], [0.38, 0.8], [0.8, 0.86], [0.94, 0.85], [1, 0.74]],
-    mid: [[0, 0.47], [0.1, 0.54], [0.9, 0.6], [1, 0.55]],
-    bot: [[0, 0.28], [0.05, 0.18], [0.95, 0.2], [1, 0.32]],
+    mid: [[0, 0.5], [0.1, 0.64], [0.9, 0.7], [1, 0.6]],
+    bot: [[0, 0.28], [0.05, 0.2], [0.95, 0.21], [1, 0.32]],
     n: 3.6, m: 3, mb: 4.4, tw: 0.9,
     cabin: {u0: 0.4, u1: 0.88, roof: [[0.4, 0.8], [0.54, 1.27], [0.64, 1.28], [0.88, 0.86]], w: 0.79, tw: 0.66},
   },
   // an electric saloon: smooth, no grille, one long glass roof
   ev: {
-    len: 4.8, wheelU: [0.17, 0.81], r: 0.36, track: 0.84, tyreW: 0.25, slim: true, noGrille: true, exhausts: 0,
-    w: [[0, 0.74], [0.04, 0.88], [0.14, 0.94], [0.85, 0.94], [0.96, 0.9], [1, 0.8]],
-    top: [[0, 0.6], [0.04, 0.72], [0.2, 0.8], [0.27, 0.84], [0.82, 0.92], [0.95, 0.9], [1, 0.8]],
-    mid: [[0, 0.5], [0.1, 0.58], [0.9, 0.64], [1, 0.6]],
-    bot: [[0, 0.3], [0.05, 0.2], [0.95, 0.22], [1, 0.34]],
-    n: 3.4, m: 2.8, mb: 4.2, tw: 0.9,
-    cabin: {u0: 0.26, u1: 0.9, roof: [[0.26, 0.84], [0.44, 1.42], [0.66, 1.43], [0.9, 0.92]], w: 0.82, tw: 0.7},
+    len: 4.8, wheelU: [0.17, 0.81], r: 0.35, track: 0.84, tyreW: 0.25, slim: true, noGrille: true, exhausts: 0, lightbar: true,
+    w: [[0, 0.8], [0.04, 0.89], [0.14, 0.95], [0.85, 0.95], [0.97, 0.92], [1, 0.86]],
+    top: [[0, 0.66], [0.04, 0.78], [0.2, 0.88], [0.27, 0.92], [0.82, 0.99], [0.95, 0.97], [1, 0.87]],
+    mid: [[0, 0.56], [0.1, 0.74], [0.9, 0.8], [1, 0.7]],
+    bot: [[0, 0.32], [0.05, 0.24], [0.95, 0.25], [1, 0.36]],
+    n: 3.6, m: 2.6, mb: 4.4, tw: 0.9,
+    cabin: {u0: 0.26, u1: 0.9, roof: [[0.26, 0.92], [0.44, 1.44], [0.66, 1.45], [0.9, 0.99]], w: 0.82, tw: 0.7},
   },
   // a rally hatch: raised a little, chunky tyres, a roof spoiler and mud flaps
   rally: {
@@ -191,13 +191,13 @@ const STYLES = {
     cabin: {u0: 0.3, u1: 0.975, roof: [[0.3, 0.96], [0.46, 1.53], [0.88, 1.51], [0.975, 1.06]], w: 0.86, tw: 0.78},
   },
   suv: {
-    len: 4.7, wheelU: [0.18, 0.8], r: 0.4, track: 0.83, tyreW: 0.26,
-    w: [[0, 0.76], [0.04, 0.9], [0.12, 0.95], [0.88, 0.95], [0.97, 0.92], [1, 0.84]],
-    top: [[0, 0.78], [0.05, 0.92], [0.2, 1.02], [0.3, 1.06], [0.9, 1.1], [1, 1.04]],
-    mid: [[0, 0.66], [0.1, 0.76], [0.9, 0.8], [1, 0.74]],
-    bot: [[0, 0.46], [0.05, 0.36], [0.95, 0.36], [1, 0.46]],
-    n: 3.8, m: 3, mb: 4.5, tw: 0.92,
-    cabin: {u0: 0.29, u1: 0.98, roof: [[0.29, 1.06], [0.43, 1.76], [0.92, 1.78], [0.98, 1.14]], w: 0.88, tw: 0.84},
+    len: 4.75, wheelU: [0.18, 0.8], r: 0.38, track: 0.85, tyreW: 0.255, cladding: true,
+    w: [[0, 0.84], [0.04, 0.92], [0.12, 0.96], [0.88, 0.96], [0.97, 0.94], [1, 0.9]],
+    top: [[0, 0.86], [0.05, 0.98], [0.2, 1.08], [0.3, 1.13], [0.9, 1.17], [1, 1.11]],
+    mid: [[0, 0.74], [0.1, 0.86], [0.9, 0.9], [1, 0.84]],
+    bot: [[0, 0.5], [0.05, 0.4], [0.95, 0.4], [1, 0.5]],
+    n: 3.8, m: 2.6, mb: 4.5, tw: 0.92,
+    cabin: {u0: 0.29, u1: 0.98, roof: [[0.29, 1.13], [0.43, 1.7], [0.92, 1.72], [0.98, 1.2]], w: 0.88, tw: 0.8},
   },
 };
 
@@ -227,12 +227,27 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
     const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = m.receiveShadow = true; g.add(m); return m;
   };
 
+  const sporty = ['supercar', 'hyper', 'gt', 'rally', 'muscle', 'coupe'].includes(style);
+  const trimBlack = kit.mat('#101314', 0.1, 0.42); trimBlack.side = T.DoubleSide; const lens = kit.glass, satin = kit.mat('#2a2f31', 0.35, 0.5);
+  // where the body surface is at a point (x, y) seen from the front or the back, so lamps sit on it
+  const widthAt = (p, y) => y >= p.mid ? (y > p.top ? -1 : surfaceX(p, y)) : y < p.bot ? -1 : p.w * Math.pow(Math.max(0, 1 - Math.pow((p.mid - y) / Math.max(p.mid - p.bot, 1e-3), p.mb)), 1 / p.n);
+  const faceZ = (x, y, back = false) => { for (let k = 0; k <= 200; k++) { const u = back ? 1 - k * 0.0015 : k * 0.0015, p = sec(u); if (widthAt(p, y) >= Math.abs(x)) return p.z; } return sec(back ? 0.97 : 0.03).z; };
   // body
   const hero = style === 'roadster';  // the player's car gets the finest mesh; traffic is lighter
   add(hero ? loft(sec) : loft(sec, 36, 28), paint);
   // underbody between the wheels, so low views never see through the arches
   add(roundedBox(1.5, 0.22, S.len * 0.72, 0.08), dark, 0, S.r * 0.75, Z(0.5));
 
+  // black arch liners, so the wheels sit in a dark wheel well, and black sills along the bottom
+  if (style !== 'roadster') {
+    for (const u of S.wheelU) for (const side of [-1, 1]) {
+      const liner = add(cached('liner' + S.r, () => new T.CylinderGeometry(S.r + 0.07, S.r + 0.07, 0.5, 20, 1, true, 0, Math.PI)), trimBlack, side * (S.track - 0.1), S.r, Z(u), 0, 0, Math.PI / 2);
+      if (S.cladding) { const p = sec(u); add(cached('clad' + S.r, () => new T.TorusGeometry(S.r + 0.09, 0.04, 6, 22, Math.PI)), trimBlack, side * (p.w + 0.005), S.r, Z(u), 0, Math.PI / 2, 0); }
+    }
+    const sill = [];
+    for (let u = S.wheelU[0] + 0.1; u <= S.wheelU[1] - 0.1; u += 0.04) { const p = sec(u); sill.push([p.w * 0.985, p.bot + 0.05, p.z]); }
+    for (const side of [-1, 1]) add(tube(sill.map(([x, y, z]) => [x * side, y, z]), S.cladding ? 0.06 : 0.04, false, 20), trimBlack);
+  }
   // chrome shoulder trim
   const trim = [];
   for (let u = 0.08; u <= 0.93; u += 0.05) { const p = sec(u); trim.push([p.w + 0.004, p.mid + 0.01, p.z]); }
@@ -252,12 +267,22 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
     const wB = sec(dir > 0 ? 0.04 : 0.96).w;
     const pts = [[-wB - 0.02, by, zz + dir * 0.3], [-wB + 0.15, by, zz + dir * 0.03], [0, by, zz - dir * 0.02], [wB - 0.15, by, zz + dir * 0.03], [wB + 0.02, by, zz + dir * 0.3]];
     if (style === 'roadster') add(tube(pts, 0.04, false, 40), chrome);
-    else add(tube(pts, 0.07, false, 40), paint);
-    add(roundedBox(0.52, 0.12, 0.03, 0.015), plateM, 0, by + (style === 'roadster' ? 0.13 : 0.12), zz - dir * 0.01);
+    if (style === 'roadster') add(roundedBox(0.52, 0.12, 0.03, 0.015), plateM, 0, by + 0.13, zz - dir * 0.01);
+    else { const py = by + (dir > 0 ? 0.0 : 0.1); add(roundedBox(0.52, 0.12, 0.03, 0.015), plateM, 0, py, faceZ(0.27, py, dir < 0) + dir * 0.005); }
   }
   // grille
   const nose = sec(0.012);
-  if (!S.noGrille) add(roundedBox(style === 'roadster' ? 0.7 : 0.95, style === 'suv' ? 0.26 : 0.16, 0.05, 0.06), dark, 0, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.01);
+  if (style === 'roadster') add(roundedBox(0.7, 0.16, 0.05, 0.06), dark, 0, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.01);
+  else {
+    const gy = by + 0.16, gz = faceZ(0.35, gy) - 0.0, gw = style === 'suv' ? 1.0 : 0.82, gh = style === 'suv' ? 0.28 : 0.15;
+    if (!S.noGrille) {
+      add(roundedBox(gw, gh, 0.05, 0.05), trimBlack, 0, gy, gz);                                               // grille
+      for (let i = 1; i < 4; i++) add(roundedBox(gw - 0.06, 0.012, 0.02, 0.005), satin, 0, gy - gh / 2 + i * gh / 4, gz - 0.02);   // slats
+      add(tube([[-gw / 2, gy + gh / 2, gz - 0.015], [0, gy + gh / 2 + 0.01, gz - 0.02], [gw / 2, gy + gh / 2, gz - 0.015]], 0.01, false, 10), chrome);
+    }
+    add(roundedBox(1.15, 0.1, 0.06, 0.04), trimBlack, 0, by - 0.11, faceZ(0.55, by - 0.11) + 0.005);                 // lower intake
+    add(roundedBox(1.2, 0.09, 0.06, 0.03), trimBlack, 0, by - 0.11, faceZ(0.6, by - 0.11, true) - 0.005);           // rear diffuser
+  }
   if (style === 'roadster') for (let i = -3; i <= 3; i++) add(roundedBox(0.012, 0.12, 0.04, 0.005), chrome, i * 0.085, (nose.mid + nose.bot) / 2 + 0.02, Z(0.012) - 0.03);
 
   // lamps
@@ -274,17 +299,41 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
       tails.push([side * t.w * 0.66, t.mid + 0.08, t.z + 0.1]);
     }
   } else {
+    const redLens = kit.mat('#6e0f0b', 0.2, 0.12), amber = kit.mat('#e0821a', 0.2, 0.2);
     for (const side of [-1, 1]) {
       const p = sec(0.02), y = (p.mid + p.top) / 2 - 0.02;
-      if (S.slim) { add(roundedBox(0.5, 0.06, 0.08, 0.025), head, side * p.w * 0.62, y + 0.02, p.z + 0.03, 0, -side * 0.22, 0); add(roundedBox(0.54, 0.1, 0.06, 0.04), dark, side * p.w * 0.62, y + 0.02, p.z + 0.06, 0, -side * 0.22, 0); }
+      if (!S.slim) {
+        // a headlamp cluster: dark housing, two projector bowls, an LED running-light strip, under a clear cover
+        const hx = side * 0.6, ry = -side * 0.22, hy = by + 0.25, hz = faceZ(hx + side * 0.18, hy) - 0.01;
+        add(roundedBox(0.5, 0.15, 0.1, 0.05), trimBlack, hx, hy, hz + 0.04, 0, ry, 0);
+        for (const k of [-0.1, 0.06]) { const bx = hx + side * k; add(cached('bowl', () => new T.SphereGeometry(0.045, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), chrome, bx, hy + 0.005, hz - 0.012 + side * k * Math.sin(ry), -Math.PI / 2, 0, 0); add(cached('proj', () => new T.SphereGeometry(0.024, 10, 8)), lens, bx, hy + 0.005, hz - 0.02 + side * k * Math.sin(ry)); }
+        add(roundedBox(0.4, 0.024, 0.03, 0.01), head, hx, hy - 0.055, hz - 0.012, 0, ry, 0);
+        add(roundedBox(0.024, 0.09, 0.03, 0.01), head, hx + side * 0.2, hy - 0.02, hz - 0.012 - 0.2 * Math.sin(-ry), 0, ry, 0);
+        add(roundedBox(0.52, 0.17, 0.02, 0.06), lens, hx, hy, hz - 0.035, 0, ry, 0).castShadow = false;
+        add(roundedBox(0.08, 0.035, 0.025, 0.012), amber, hx + side * 0.17, hy + 0.045, hz - 0.015 - 0.17 * Math.sin(-ry), 0, ry, 0);
+        heads.push([hx, hy, hz - 0.08]);
+        const tx = side * 0.64, ty = by + 0.33, tz = faceZ(tx + side * 0.12, ty, true) + 0.01;
+        add(roundedBox(0.36, 0.15, 0.16, 0.05), redLens, tx, ty, tz - 0.06, 0, side * 0.22, 0);
+        add(roundedBox(0.3, 0.026, 0.03, 0.01), tail, tx, ty + 0.035, tz + 0.02, 0, side * 0.22, 0);
+        add(roundedBox(0.3, 0.026, 0.03, 0.01), tail, tx, ty - 0.035, tz + 0.02, 0, side * 0.22, 0);
+        add(roundedBox(0.08, 0.05, 0.03, 0.01), chrome, tx - side * 0.1, ty, tz + 0.025, 0, side * 0.22, 0);   // reversing lamp
+        tails.push([tx, ty, tz + 0.1]);
+        continue;
+      }
+      if (S.slim) { const hx = side * p.w * 0.62, ry = -side * 0.22; p.z = faceZ(hx + side * 0.2, y + 0.02) - 0.03;
+        add(roundedBox(0.5, 0.025, 0.04, 0.012), head, hx, y + 0.045, p.z + 0.02, 0, ry, 0);                      // LED blade
+        add(roundedBox(0.4, 0.07, 0.06, 0.03), trimBlack, hx, y - 0.005, p.z + 0.05, 0, ry, 0);                     // projector slot
+        for (const k of [-0.08, 0.06]) add(cached('proj', () => new T.SphereGeometry(0.022, 10, 8)), chrome, hx + side * k, y - 0.005, p.z + 0.025);
+        add(roundedBox(0.53, 0.12, 0.025, 0.04), lens, hx, y + 0.02, p.z + 0.012, 0, ry, 0).castShadow = false; }
       else { add(roundedBox(0.4, 0.13, 0.08, 0.05), head, side * p.w * 0.66, y, p.z + 0.02, 0, -side * 0.15, 0);
       add(roundedBox(0.44, 0.17, 0.06, 0.06), dark, side * p.w * 0.66, y, p.z + 0.05, 0, -side * 0.15, 0); }
       heads.push([side * p.w * 0.66, y, p.z - 0.06]);
       const t = sec(0.985), ty = (t.mid + t.top) / 2;
-      if (S.slim) add(roundedBox(0.62, 0.06, 0.08, 0.025), tail, side * t.w * 0.6, ty, t.z - 0.01, 0, side * 0.1, 0);
+      if (S.slim) { t.z = faceZ(side * t.w * 0.6 + side * 0.25, ty, true) + 0.01; add(roundedBox(0.62, 0.09, 0.07, 0.03), redLens, side * t.w * 0.6, ty, t.z - 0.01, 0, side * 0.1, 0); add(roundedBox(0.58, 0.022, 0.03, 0.01), tail, side * t.w * 0.6, ty + 0.01, t.z + 0.02, 0, side * 0.1, 0); }
       else add(roundedBox(0.42, 0.14, 0.08, 0.05), tail, side * t.w * 0.72, ty, t.z - 0.01, 0, side * 0.15, 0);
       tails.push([side * t.w * 0.72, ty, t.z + 0.08]);
     }
+    if (S.lightbar) { const t = sec(0.99), ty = (t.mid + t.top) / 2 + 0.01, f = sec(0.025); add(roundedBox(t.w * 1.5, 0.018, 0.03, 0.008), tail, 0, ty + 0.01, t.z + 0.02); add(roundedBox(f.w * 1.1, 0.014, 0.03, 0.006), head, 0, (f.mid + f.top) / 2 + 0.07, f.z + 0.005); }
   }
   g.userData.lampPos = {head: heads, tail: tails};
 
@@ -318,7 +367,7 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
   for (const [i, u] of S.wheelU.entries()) for (const side of [-1, 1]) wheel(side, Z(u), i === 0);
 
   function wheel(side, z, front) {
-    const steer = new T.Group(), pivot = new T.Group(), r = S.r, tw = S.tyreW, rimR = r * 0.66;
+    const steer = new T.Group(), pivot = new T.Group(), r = S.r, tw = S.tyreW, rimR = r * (S.wire ? 0.66 : style === 'suv' || style === 'rally' ? 0.68 : 0.74);
     steer.position.set(side * (S.track + 0.08), r, z); g.add(steer); steer.add(pivot);
     const tyre = cached(`tyre${r}|${tw}`, () => {
       const pts = [[rimR, -tw / 2], [r - 0.04, -tw / 2], [r - 0.01, -tw / 2 + 0.025], [r, -tw / 2 + 0.06], [r, tw / 2 - 0.06], [r - 0.01, tw / 2 - 0.025], [r - 0.04, tw / 2], [rimR, tw / 2]];
@@ -330,16 +379,30 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
       const pts = [[0.001, 0.03], [rimR * 0.25, 0.03], [rimR * 0.85, -0.02], [rimR, -0.05], [rimR, -tw + 0.04]];
       const l = new T.LatheGeometry(pts.map(([a, b]) => new T.Vector2(a, b)), 36); l.rotateZ(-Math.PI / 2); return l;
     });
-    const d = mesh(dish, S.wire ? chrome : kit.mat('#b9bec0', 0.9, 0.3)); d.position.x = out; d.scale.x = side; pivot.add(d);
-    const spokes = S.wire ? 16 : 5;
-    for (let k = 0; k < spokes; k++) {
-      const a = k / spokes * Math.PI * 2, sp = mesh(S.wire ? cached('wspoke', () => new T.CylinderGeometry(0.005, 0.005, 1, 5)) : roundedBox(0.05, 1, 0.025, 0.012), S.wire ? chrome : kit.mat('#c9ced0', 0.95, 0.25));
-      sp.scale.y = rimR * 0.82; sp.position.set(out + side * 0.015, Math.cos(a) * rimR * 0.46, Math.sin(a) * rimR * 0.46); sp.rotation.x = a; pivot.add(sp);
+    const alloy = kit.mat(sporty ? '#62686c' : '#c3c8ca', 0.9, sporty ? 0.32 : 0.26);
+    const d = mesh(dish, S.wire ? chrome : kit.mat('#16191b', 0.5, 0.55)); d.position.x = out; d.scale.x = side; pivot.add(d);
+    if (S.wire) {
+      for (let k = 0; k < 16; k++) {
+        const a = k / 16 * Math.PI * 2, sp = mesh(cached('wspoke', () => new T.CylinderGeometry(0.005, 0.005, 1, 5)), chrome);
+        sp.scale.y = rimR * 0.82; sp.position.set(out + side * 0.015, Math.cos(a) * rimR * 0.46, Math.sin(a) * rimR * 0.46); sp.rotation.x = a; pivot.add(sp);
+      }
+    } else {
+      // a dark barrel behind the spokes (so you see depth, not a flat disc), then five twin spokes
+      const barrel = mesh(cached('barrel', () => new T.CylinderGeometry(1, 1, 1, 24, 1, true)), kit.mat('#1b1e20', 0.6, 0.5)); barrel.scale.set(rimR * 0.97, tw * 0.8, rimR * 0.97); barrel.rotation.z = Math.PI / 2; barrel.position.x = out - side * tw * 0.4; pivot.add(barrel);
+      const lip = mesh(cached('lip' + rimR, () => new T.TorusGeometry(rimR * 0.985, 0.012, 6, 36)), alloy); lip.rotation.y = Math.PI / 2; lip.position.x = out + side * 0.012; pivot.add(lip);
+      const twin = style === 'suv' || style === 'rally' ? 1 : 2, n = 5;
+      for (let k = 0; k < n; k++) for (let t = 0; t < twin; t++) {
+        const a = (k + (twin === 2 ? (t - 0.5) * 0.11 : 0)) / n * Math.PI * 2;
+        const sp = mesh(cached('spk' + twin, () => { const b = roundedBox(twin === 2 ? 0.032 : 0.06, 1, 0.03, 0.01).clone(); const q = b.attributes.position; for (let i = 0; i < q.count; i++) { const y = q.getY(i); q.setX(i, q.getX(i) * (1.25 - 0.5 * (y + 0.5))); } b.computeVertexNormals(); return b; }), alloy);
+        sp.scale.y = rimR * 0.8; sp.position.set(out + side * 0.012, Math.cos(a) * rimR * 0.5, Math.sin(a) * rimR * 0.5); sp.rotation.x = a; pivot.add(sp);
+      }
+      const hubD = mesh(cached('cap', () => new T.CylinderGeometry(1, 1, 0.04, 20)), alloy); hubD.scale.set(rimR * 0.27, 1, rimR * 0.27); hubD.rotation.z = Math.PI / 2; hubD.position.x = out + side * 0.032; pivot.add(hubD);
+      for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + 0.6, nut = mesh(cached('nut', () => new T.CylinderGeometry(0.011, 0.011, 0.03, 6)), chrome); nut.rotation.z = Math.PI / 2; nut.position.set(out + side * 0.05, Math.cos(a) * rimR * 0.17, Math.sin(a) * rimR * 0.17); pivot.add(nut); }
     }
-    const cap = mesh(cached('cap', () => new T.CylinderGeometry(1, 1, 0.04, 20)), chrome); cap.scale.set(rimR * 0.22, 1, rimR * 0.22); cap.rotation.z = Math.PI / 2; cap.position.x = out + side * 0.03; pivot.add(cap);
+    const cap = mesh(cached('cap', () => new T.CylinderGeometry(1, 1, 0.04, 20)), chrome); const cs = S.wire ? 0.22 : 0.09; cap.scale.set(rimR * cs, 1, rimR * cs); cap.rotation.z = Math.PI / 2; cap.position.x = out + side * (S.wire ? 0.03 : 0.056); pivot.add(cap);
     // brake disc and calliper stay still (not on the spinning pivot)
     const disc = mesh(cached('disc', () => new T.CylinderGeometry(1, 1, 0.025, 28)), kit.mat('#5d6163', 0.9, 0.4)); disc.scale.set(rimR * 0.78, 1, rimR * 0.78); disc.rotation.z = Math.PI / 2; disc.position.x = side * 0.02; steer.add(disc);
-    const cal = mesh(roundedBox(0.06, 0.14, 0.1, 0.02), kit.mat(S.wire ? '#4d5153' : '#9b2d23', 0.3, 0.5)); cal.position.set(side * 0.05, rimR * 0.55, 0); steer.add(cal);
+    const cal = mesh(roundedBox(0.05, 0.12, 0.09, 0.02), kit.mat(S.wire ? '#4d5153' : sporty ? '#b0291e' : '#5f6466', 0.3, 0.5)); cal.position.set(side * 0.05, rimR * 0.55, 0); steer.add(cal);
     kit.addWheel(steer, pivot, r, front);
   }
 
@@ -388,9 +451,17 @@ export function buildDetailedCar(g, style, paintColor, driver, kit) {
         }
       };
       pillar(C.u0 + 0.01, ra, 0.04);
-      pillar((ra + rb) / 2 + 0.02, (ra + rb) / 2 + 0.02, 0.045);
-      pillar(C.u1 - 0.01, rb, style === 'hatch' || style === 'suv' ? 0.09 : 0.06);
+      { const pb = cabSec((ra + rb) / 2 + 0.02); for (const side of [-1, 1]) add(roundedBox(0.012, pb.top - pb.mid - 0.04, 0.09, 0.005), kit.glassDark, side * (surfaceX(pb, (pb.top + pb.mid) / 2) + 0.008), (pb.top + pb.mid) / 2 - 0.01, pb.z, 0, 0, side * 0.12); }
+      // a shark-fin aerial at the back of the roof
+      { const pf = cabSec(rb - 0.03); add(cached('fin', () => { const f = new T.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); f.scale(0.035, 0.06, 0.12); return f; }), paint, 0, pf.top + 0.005, pf.z); }
+      pillar(C.u1 - 0.01, rb, style === 'hatch' || style === 'suv' ? 0.055 : 0.05);
     }
+    // wipers resting at the foot of the windscreen
+    { const pw = sec(C.u0 + 0.015); for (const x0 of [-0.62, 0.02]) add(tube([[x0, pw.top + 0.03, pw.z + 0.05], [x0 + 0.3, pw.top + 0.035, pw.z + 0.03], [x0 + 0.56, pw.top + 0.03, pw.z + 0.04]], 0.008, false, 6), trimBlack); }
+    // door handles and side repeaters
+    const doors = style === 'hatch' || style === 'rally' || style === 'coupe' || style === 'gt' || style === 'muscle' || style === 'supercar' || style === 'hyper' ? [C.u0 + (C.u1 - C.u0) * 0.42] : [C.u0 + (C.u1 - C.u0) * 0.4, C.u0 + (C.u1 - C.u0) * 0.78];
+    for (const u of doors) { const p = sec(u), y = p.mid + (p.top - p.mid) * 0.55; for (const side of [-1, 1]) add(roundedBox(0.03, 0.035, 0.17, 0.015), sporty ? paint : chrome, side * (surfaceX(p, y) + 0.01), y, p.z); }
+    { const p = sec(S.wheelU[0] + 0.09), y = p.mid + 0.02; for (const side of [-1, 1]) add(roundedBox(0.02, 0.03, 0.08, 0.012), kit.mat('#e0821a', 0.2, 0.2), side * (surfaceX(p, y) + 0.005), y, p.z); }
     // window line trim
     for (let u = C.u0 + 0.02; u <= C.u1 - 0.02; u += (C.u1 - C.u0) / 12) { const p = sec(u); pts.push([p.w * C.w * 0.99, p.top - 0.02, p.z]); }
     for (const side of [-1, 1]) add(tube(pts.map(([x, y, z]) => [x * side, y, z]), 0.012, false, 24), dark);

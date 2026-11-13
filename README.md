@@ -70,6 +70,14 @@ Also new in v3, with or without the download:
 - Steering wheels and pedals work; Settings > Driving > Swap the pedals if they come out the wrong way round.
 - Phones: drag the round steering pad, hold Go and Brake.
 
+## Version 3.23: cars that look like real cars
+
+- Modern proportions: a higher shoulder and window line, bigger wheels that fill the arches, flatter ends.
+- Alloy wheels with twin spokes, wheel nuts and a dark barrel; grey brake callipers (red on the sporty cars); black wheel wells.
+- Headlamp clusters under clear covers (projectors and an LED running-light strip), tail-lamp clusters with reversing lamps, a light bar on the electric car.
+- A grille with slats, a lower air intake and rear diffuser, black sills (and arch cladding on the SUV), door handles, side indicators, wipers, a shark-fin aerial and a gloss-black B pillar.
+- Tail lamps are no longer lit up in daylight.
+
 ## Version 3.19: a better picture
 - Sky: sunrise and sunset glow on the sun's side, a pink band over the blue shadow of the earth at dusk, and a high layer of thin cloud that drifts with the wind and catches the sunset.
 - Wet roads: headlights and tail-lights stretch into long reflections on wet tarmac; raindrops make rings in the puddles.
