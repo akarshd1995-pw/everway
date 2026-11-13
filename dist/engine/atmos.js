@@ -114,7 +114,8 @@ export function updateAtmos(dt, run) {
   if (G.player !== beamCar) fitBeams(G.player);
   const lightsOn = headlights[0] && headlights[0].intensity > .1 ? 1 : 0;
   beamMat.uniforms.uK.value = lightsOn * Math.min(1, fog * 1.2 + rain * .45 + (G.snowAmt || 0) * .5) * (.35 + .65 * nightAmt) * (G.beamK || 1);
-  for (const b of beams) b.visible = beamMat.uniforms.uK.value > .01 && state.cam !== 1 && !G.noBeams;
+  // (switched off for now: they looked like a white haze rather than shafts of light; to be redone)
+  for (const b of beams) b.visible = false;
 
   // snow settles while it falls and melts slowly afterwards; in winter a little lies at the edges anyway
   const base = state.season === 'winter' ? .3 : 0, snowing = G.snowAmt || 0;
