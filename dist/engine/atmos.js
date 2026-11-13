@@ -54,7 +54,7 @@ const _w = new T.Vector3(), _p = new T.Vector3();
 const beamMat = new T.ShaderMaterial({
   uniforms: {uK: {value: 0}},
   vertexShader: `varying float vT;varying vec3 vN,vV;void main(){vT=uv.y;vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*mv;}`,
-  fragmentShader: `uniform float uK;varying float vT;varying vec3 vN,vV;void main(){float edge=pow(abs(dot(vN,vV)),1.5);float a=uK*edge*pow(vT,1.6)*.16;gl_FragColor=vec4(vec3(1.,.95,.82)*a,a);}`,
+  fragmentShader: `uniform float uK;varying float vT;varying vec3 vN,vV;void main(){float edge=pow(abs(dot(vN,vV)),1.5);float a=uK*edge*pow(vT,1.4)*.3;gl_FragColor=vec4(vec3(1.,.95,.82)*a,a);}`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false,
 });
 const beamGeo = new T.ConeGeometry(4.5, 34, 20, 1, true); beamGeo.translate(0, -17, 0); beamGeo.rotateX(-Math.PI / 2);   // apex at the lamp, opening forwards (-z)
