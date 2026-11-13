@@ -2,7 +2,7 @@
 // sideways position square to the road, height on the (banked) surface, heading, pitch on hills.
 import * as T from '../three.module.js';
 import {animateVehicle} from '../vehicles.js';
-import {scene} from './render.js';
+import {scene, camera} from './render.js';
 import {canvasTexture} from './textures.js';
 import {lerp, vnoise, smooth} from './core.js';
 import {G,state} from './state.js';
@@ -190,9 +190,16 @@ function forkOffset(u) {
 }
 
 /** Head and tail lamp glows on at night. */
+// a lamp's glow is only seen from the side it shines to: headlamps from in front, tail lamps from behind
+const _cl = new T.Vector3();
+function lampGlows(v, on) {
+  const g = v.userData.glows; if (!g || !g.length) return;
+  v.updateMatrixWorld(); _cl.copy(camera.position); v.worldToLocal(_cl);
+  for (const s of g) { const facing = s.position.z < 0 ? _cl.z < s.position.z + .3 : _cl.z > s.position.z - .3; s.visible = (on || !!s.userData.flashOn) && facing; }
+}
 export function updateLamps(on) {
-  for (const s of G.player.userData.glows) s.visible = on || !!s.userData.flashOn;
-  for (let i = 0; i < traffic.length; i++) for (const s of traffic[i].userData.glows || []) s.visible = on || !!s.userData.flashOn;
+  lampGlows(G.player, on);
+  for (let i = 0; i < traffic.length; i++) if (traffic[i].visible) lampGlows(traffic[i], on);
 }
 
 /* ---- smoke from a damaged vehicle: a small pool of soft grey puffs that rise and fade */

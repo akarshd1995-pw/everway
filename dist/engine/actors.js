@@ -37,7 +37,7 @@ for(const x of [-.65,.65]){const l=new T.SpotLight('#fff0ce',0,110,.42,.55,1);l.
 
 const headGlow=new T.SpriteMaterial({map:glowTex,color:'#fff4dc',transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0}),tailGlow=new T.SpriteMaterial({map:glowTex,color:'#ff4a2e',transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:0});
 
-function addGlows(v){const car=v.userData.type==='car',lp=v.userData.lampPos,heads=lp?lp.head:car?[[-.73,.9,-2.02],[.73,.9,-2.02]]:[[0,1.3,-1.13]],tails=lp?lp.tail:car?[[-.7,.86,2.01],[.7,.86,2.01]]:[[0,1.05,1.14]];v.userData.glows=[];
+function addGlows(v){for(const sp of v.userData.glows||[])sp.removeFromParent();const car=v.userData.type==='car',lp=v.userData.lampPos,heads=lp?lp.head:car?[[-.73,.9,-2.02],[.73,.9,-2.02]]:[[0,1.3,-1.13]],tails=lp?lp.tail:car?[[-.7,.86,2.01],[.7,.86,2.01]]:[[0,1.05,1.14]];v.userData.glows=[];
   for(const p of heads){const s=new T.Sprite(headGlow);s.position.set(...p);s.scale.setScalar(car?1.05:.9);v.add(s);v.userData.glows.push(s);}
   for(const p of tails){const s=new T.Sprite(tailGlow);s.position.set(...p);s.scale.setScalar(.75);v.add(s);v.userData.glows.push(s);}}
 
