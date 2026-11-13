@@ -54,7 +54,7 @@ const _w = new T.Vector3(), _p = new T.Vector3();
 const beamMat = new T.ShaderMaterial({
   uniforms: {uK: {value: 0}},
   vertexShader: `varying float vT;varying vec3 vN,vV;void main(){vT=uv.y;vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*mv;}`,
-  fragmentShader: `uniform float uK;varying float vT;varying vec3 vN,vV;void main(){float edge=pow(abs(dot(vN,vV)),1.5);float a=uK*edge*pow(vT,1.4)*.3;gl_FragColor=vec4(vec3(1.,.95,.82)*a,a);}`,
+  fragmentShader: `uniform float uK;varying float vT;varying vec3 vN,vV;void main(){vec3 n=vN+vec3(1e-4);float d=abs(dot(normalize(n),normalize(vV+vec3(1e-4))));float a=clamp(uK*pow(d,1.5)*pow(clamp(vT,0.,1.),1.4)*.3,0.,.5);if(!(a>0.))discard;gl_FragColor=vec4(vec3(1.,.95,.82)*a,a);}`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false,
 });
 const beamGeo = new T.ConeGeometry(4.5, 34, 20, 1, true); beamGeo.translate(0, -17, 0); beamGeo.rotateX(-Math.PI / 2);   // apex at the lamp, opening forwards (-z)
@@ -113,9 +113,8 @@ export function updateAtmos(dt, run) {
   // headlight beams show in fog, rain and snow after dark (or in thick fog by day)
   if (G.player !== beamCar) fitBeams(G.player);
   const lightsOn = headlights[0] && headlights[0].intensity > .1 ? 1 : 0;
-  beamMat.uniforms.uK.value = lightsOn * Math.min(1, fog * 1.2 + rain * .45 + (G.snowAmt || 0) * .5) * (.35 + .65 * nightAmt) * (G.beamK || 1);
-  // (switched off for now: they looked like a white haze rather than shafts of light; to be redone)
-  for (const b of beams) b.visible = false;
+  beamMat.uniforms.uK.value = lightsOn * Math.min(1, Math.max(0, fog - .25) * 1.4 + Math.max(0, rain - .3) * .5 + Math.max(0, (G.snowAmt || 0) - .3) * .6) * (.35 + .65 * nightAmt);
+  for (const b of beams) b.visible = beamMat.uniforms.uK.value > .01 && state.cam !== 1 && !G.noBeams;
 
   // snow settles while it falls and melts slowly afterwards; in winter a little lies at the edges anyway
   const base = state.season === 'winter' ? .3 : 0, snowing = G.snowAmt || 0;

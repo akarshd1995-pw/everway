@@ -20,7 +20,7 @@ class Post{
     this.quad=new T.Mesh(quadGeo);this.quad.frustumCulled=false;this.levels=[];
     this.down=passMat(`uniform sampler2D tMap;uniform vec2 texel;uniform float threshold;varying vec2 vUv;
       void main(){vec3 c=(texture2D(tMap,vUv+texel*vec2(-.5,-.5)).rgb+texture2D(tMap,vUv+texel*vec2(.5,-.5)).rgb+texture2D(tMap,vUv+texel*vec2(-.5,.5)).rgb+texture2D(tMap,vUv+texel*vec2(.5,.5)).rgb)*.25;
-      float l=max(c.r,max(c.g,c.b));c*=max(l-threshold,0.)/max(l,1e-4);gl_FragColor=vec4(min(c,vec3(30.)),1.);}`,{tMap:{value:null},texel:{value:new T.Vector2()},threshold:{value:1}});
+      if(!(c.r+c.g+c.b<1e6))c=vec3(0.);c=max(c,vec3(0.));float l=max(c.r,max(c.g,c.b));c*=max(l-threshold,0.)/max(l,1e-4);gl_FragColor=vec4(min(c,vec3(30.)),1.);}`,{tMap:{value:null},texel:{value:new T.Vector2()},threshold:{value:1}});
     this.blur=passMat(`uniform sampler2D tMap;uniform vec2 dir;varying vec2 vUv;
       void main(){vec3 c=texture2D(tMap,vUv).rgb*.227027;c+=(texture2D(tMap,vUv+dir*1.384615).rgb+texture2D(tMap,vUv-dir*1.384615).rgb)*.316216;c+=(texture2D(tMap,vUv+dir*3.230769).rgb+texture2D(tMap,vUv-dir*3.230769).rgb)*.070270;gl_FragColor=vec4(c,1.);}`,{tMap:{value:null},dir:{value:new T.Vector2()}});
     this.ao=passMat(`uniform sampler2D tDepth;uniform mat4 uProj,uInvProj;uniform float uRadius;varying vec2 vUv;
@@ -64,7 +64,7 @@ class Post{
         // heat haze: far away, close to the ground, the air wobbles and the road ahead mirrors the sky
         float hz=0.;if(uHaze>0.&&dRaw<.99999){hz=uHaze*smoothstep(90.,260.,z)*(1.-smoothstep(1500.,2600.,z));
           uv+=vec2(sin(vUv.y*620.+uTime*7.)*.0011+sin(vUv.y*270.-uTime*4.3)*.0008,sin(vUv.x*300.+uTime*5.)*.0006)*hz;}
-        vec3 c=texture2D(tScene,uv).rgb;
+        vec3 c=texture2D(tScene,uv).rgb;if(!(c.r+c.g+c.b<1e6))c=vec3(0.);
         if(hz>0.){vec4 vp2=uInvProj*vec4(vUv*2.-1.,dRaw*2.-1.,1.);vec3 P2=vp2.xyz/vp2.w,N2=normalize(cross(dFdx(P2),dFdy(P2)));if(dot(N2,P2)>0.)N2=-N2;
           float fl=smoothstep(.85,.97,dot(N2,uUpV));c=mix(c,uHazeCol*1.05,fl*hz*smoothstep(160.,420.,z)*.55);}
         if(drop>0.)c=mix(c,texture2D(tSoft,uv).rgb*1.08,drop*.55);
