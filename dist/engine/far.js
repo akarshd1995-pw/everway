@@ -106,7 +106,7 @@ sea.material.onBeforeCompile = sh => {
       g += vec2(.2, .98) * cos(dot(p, vec2(.2, .98)) * .53 + t * 2.3) * .03;
       g += vec2(-.9, .4) * cos(dot(p, vec2(-.9, .4)) * 1.3 + t * 3.1) * .02;
       normal = normalize(normal + (viewMatrix * vec4(-g.x, 0., -g.y, 0.)).xyz);`)
-    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= .85 + .3 * smoothstep(-.5, .5, sin(vSeaW.x * .01 + vSeaW.z * .013));'
+    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= .85 + .3 * smoothstep(-.5, .5, sin(vSeaW.x * .01 + vSeaW.z * .013));')
     // a path of glitter on the water towards a low sun or the moon: each wavelet that tilts just
     // right flashes, with a soft glow along the path
     .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
