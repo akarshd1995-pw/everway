@@ -20,6 +20,8 @@ import {resetForks} from './fork.js';
 import {resetTrip} from './trip.js';
 import {resetEvents} from './events.js';
 import {resetMoments} from './moments.js';
+import {resetPerch} from './perch.js';
+import {baseWeather, setWeatherKind} from './atmos.js';
 import {startReplay, clearReplay} from './replay.js';
 import {setSeed} from './road.js';
 import {route, LEG} from './biomes.js';
@@ -54,9 +56,9 @@ tabs.forEach(t => t.onclick = () => {
   document.querySelectorAll('.pane').forEach(p => p.hidden = p.dataset.pane !== t.dataset.tab);
 });
 
-segmented('#weather', v => { state.weather = v; G.weatherNext = null; G.weatherNow = v === 'auto' ? pickWeather() : v; G.snapWeather = .6; toast(v === 'auto' ? 'The forecast follows your journey.' : 'A little ' + v + ' weather.'); });
+segmented('#weather', v => { state.weather = v; G.weatherNext = null; setWeatherKind(v); G.weatherNow = v === 'auto' ? pickWeather() : baseWeather(v); G.snapWeather = .6; toast(v === 'auto' ? 'The forecast follows your journey.' : v === 'stormy' ? 'A thunderstorm is gathering.' : v === 'foggy' ? 'Fog is rolling in.' : 'A little ' + v + ' weather.'); });
 segmented('#difficulty', v => { state.difficulty = v; resetForks(); resetRoad(v); rebuild(state.distance); setViewDistance(); toast({relaxed: 'A relaxed road: long sweeping bends and gentle hills.', normal: 'The road as it comes.', twisty: 'A twisty road: tight bends, steep hills, a narrower lane.'}[v]); });
-segmented('#season', v => { state.season = v; rebuild(state.distance); setViewDistance(); if (state.weather === 'auto') G.weatherNow = pickWeather(); toast({spring: 'Spring: fresh green and wildflowers.', summer: 'High summer.', autumn: 'Autumn colours.', winter: 'Winter: snow on the ground.'}[v]); });
+segmented('#season', v => { state.season = v; state.seasonStart = v; state.seasonBase = state.distance; rebuild(state.distance); setViewDistance(); if (state.weather === 'auto') G.weatherNow = pickWeather(); toast({spring: 'Spring: fresh green and wildflowers.', summer: 'High summer.', autumn: 'Autumn colours.', winter: 'Winter: snow on the ground.'}[v]); });
 segmented('#traffic', v => { state.traffic = v; toast({none: 'An empty road, all yours.', light: 'A little traffic.', busy: 'Busy roads: cars, vans, tractors and caravans.'}[v]); });
 segmented('#view', v => { state.view = v; setViewDistance(v); toast({short: 'Short view: the lightest on your computer.', medium: 'Medium view distance.', far: 'Far view: the land reaches the horizon.', veryfar: 'Very far view: for fast computers.'}[v]); });
 segmented('#modes', v => { state.mode = v; toast(v === 'manual' ? 'You drive: W A S D or the arrow keys.' : 'Autodrive on. It keeps to the lane and slows for bends.'); });
@@ -70,6 +72,13 @@ segmented('#rides', v => {
   state.ride = v; swapPlayer(); paintGarage();
   state.target = v === 'cycle' ? 24 : v === 'bike' ? 75 : v === 'coach' ? 70 : 65; $('#speed').value = state.target;
   toast({car: carById(state.car).name + ': ' + carById(state.car).blurb, bike: 'Two wheels. An open road.', coach: 'All aboard. Sit back and watch the view.', cycle: 'Slow down and hear the world.'}[v]);
+});
+
+/* ------------------------------------------------------------ seasons through the year */
+$('#seasonjourney').addEventListener('change', e => {
+  state.seasonJourney = e.target.checked; state.seasonStart = state.season; state.seasonBase = state.distance;
+  rebuild(state.distance); setViewDistance();
+  toast(state.seasonJourney ? 'The year turns as you drive: a new season every 12 km or so.' : 'The season stays as it is.');
 });
 
 /* ------------------------------------------------------------ the garage */
@@ -164,6 +173,7 @@ $('#crash-home').onclick = backToMenu;
 /* ---- journal, achievements, journey codes, continue */
 function syncSeg(id, v) { document.querySelectorAll(id + ' button').forEach(x => x.classList.toggle('active', x.dataset.value === v)); }
 function syncAll() {
+  $('#seasonjourney').checked = !!state.seasonJourney;
   syncSeg('#rides', state.ride); paintGarage(); syncSeg('#biome', state.biome); syncSeg('#season', state.season); syncSeg('#difficulty', state.difficulty);
   syncSeg('#weather', state.weather); syncSeg('#modes', state.mode); syncSeg('#traffic', state.traffic); syncSeg('#view', state.view);
   document.querySelectorAll('.guide .dest').forEach(x => x.classList.toggle('active', x.dataset.biome === state.biome));
@@ -174,7 +184,7 @@ function rebuildWorld() {
   resetRoad(state.difficulty); rebuild(state.distance); setViewDistance(state.view); resetRegion();
   scene.remove(G.player); G.player = makePlayer(state.ride); scene.add(G.player);
   resetVehicle(0); traffic.forEach((car, i) => { car.userData.s = state.distance + i * 75 + 70; });
-  G.weatherNow = state.weather === 'auto' ? pickWeather() : state.weather;
+  setWeatherKind(state.weather); G.weatherNow = state.weather === 'auto' ? pickWeather() : baseWeather(state.weather);
 }
 function showContinue() {
   const s = savedJourney(), b = $('#continue');
@@ -272,7 +282,7 @@ function updateGuide() {
   rows.sort((a, b) => a.dataset.km - b.dataset.km).forEach(r => guide.appendChild(r));
 }
 export function newJourney() {
-  resetEvents(); resetMoments(); resetTrip(); resetForks(); clearReplay(); setSeed(randomSeed()); state.routeOffset = Math.floor(Math.random() * 11); state.weatherOffset = Math.floor(Math.random() * 5);
+  resetEvents(); resetMoments(); resetPerch(); resetTrip(); resetForks(); clearReplay(); setSeed(randomSeed()); state.routeOffset = Math.floor(Math.random() * 11); state.weatherOffset = Math.floor(Math.random() * 5);
   if (state.autoTime) { state.time = Math.round((5.5 + Math.random() * 16) * 20) / 20; $('#time').value = state.time; }
   rebuildWorld(); updateGuide();
 }

@@ -6,7 +6,7 @@ import {SNOW} from './biomes.js';
 import {G} from './state.js';
 /* --------------------------------------------------------------------- sky */
 
-const SKY_FS=`uniform vec3 uZenith,uHorizon,uGround,uSunDir,uSunCol,uMoonDir;uniform float uNight,uTime,uDisk,uOvercast,uGlow,uAlien;varying vec3 vDir;
+const SKY_FS=`uniform vec3 uZenith,uHorizon,uGround,uSunDir,uSunCol,uMoonDir;uniform float uNight,uTime,uDisk,uOvercast,uGlow,uAlien,uFlash;uniform vec4 uTownGlow;varying vec3 vDir;
 float hash(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h2(i),h2(i+vec2(1,0)),f.x),mix(h2(i+vec2(0,1)),h2(i+vec2(1,1)),f.x),f.y);}
@@ -24,6 +24,11 @@ void main(){vec3 d=normalize(vDir);float h=d.y;
   col=mix(col,vec3(.86,.6,.66),dusk*anti*smoothstep(.02,.07,h)*smoothstep(.22,.1,h)*.55*(1.-uOvercast));
   col=mix(col,vec3(.16,.22,.38),dusk*anti*smoothstep(.04,0.,h)*smoothstep(-.02,0.,h)*.5*(1.-uOvercast));
   col*=1.-low*.18*smoothstep(.3,1.,h);
+  // at night a town or village beyond the hills lights the low sky over it, warm orange
+  {vec2 tg=uTownGlow.xz;float tw=uTownGlow.w*pow(max(dot(normalize(d.xz+1e-4),normalize(tg+1e-4)),0.),5.)*smoothstep(.22,0.,h)*smoothstep(-.03,.01,h);
+   col+=vec3(1.,.62,.34)*tw*uNight*.3;}
+  // lightning lights up the whole sky for an instant
+  col+=vec3(.72,.78,1.)*uFlash*(.35+.65*clamp(h*2.+.3,0.,1.));
   // a high, thin layer of cloud (cirrus and mackerel sky) drifting with the wind, lit by the sun and
   // set on fire at sunset; thicker as the weather turns
   if(h>.015){vec2 q=d.xz/(h+.08)*1.6+vec2(uTime*.004,uTime*.0015);
@@ -45,7 +50,7 @@ void main(){vec3 d=normalize(vDir);float h=d.y;
   #include <colorspace_fragment>
 }`;
 
-const skyU={uZenith:{value:new T.Color()},uHorizon:{value:new T.Color()},uGround:{value:new T.Color()},uSunDir:{value:new T.Vector3()},uSunCol:{value:new T.Color()},uMoonDir:{value:new T.Vector3()},uNight:{value:0},uTime:{value:0},uDisk:{value:12},uOvercast:{value:0},uGlow:{value:1},uAlien:{value:0}};
+const skyU={uZenith:{value:new T.Color()},uHorizon:{value:new T.Color()},uGround:{value:new T.Color()},uSunDir:{value:new T.Vector3()},uSunCol:{value:new T.Color()},uMoonDir:{value:new T.Vector3()},uNight:{value:0},uTime:{value:0},uDisk:{value:12},uOvercast:{value:0},uGlow:{value:1},uAlien:{value:0},uTownGlow:{value:new T.Vector4()},uFlash:{value:0}};
 
 const skyMat=new T.ShaderMaterial({uniforms:skyU,side:T.BackSide,depthWrite:false,fog:false,vertexShader:'varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:SKY_FS});
 

@@ -16,7 +16,7 @@ const sunDir=skyU.uSunDir.value,moonDir=skyU.uMoonDir.value,tmpA=new T.Color(),t
 // Scratch values reused every frame (no allocation in the loop).
 const _alienZ=new T.Color('#b9876c'),_alienH=new T.Color('#e8b48e'),_ovZ=new T.Color(),_ovH=new T.Color(),_sunC=new T.Color(),_lit=new T.Color(),_warm=new T.Color('#ffd1a6'),_nightGain=new T.Vector3(.9,.97,1.12),_mistC=new T.Color();
 
-G.weatherNow=state.weather==='auto'?['sunny','cloudy','windy','rainy','sunny'][(state.weatherOffset||0)%5]:state.weather;let wet=0,mist=0,overcast=0,dayAmt=1,nightAmt=0,sunsetAmt=0,precipAmt=0;
+G.stormy=state.weather==='stormy';G.foggy=state.weather==='foggy';G.weatherNow=state.weather==='auto'?['sunny','cloudy','windy','rainy','sunny'][(state.weatherOffset||0)%5]:state.weather==='stormy'?'rainy':state.weather==='foggy'?'cloudy':state.weather;let wet=0,mist=0,overcast=0,dayAmt=1,nightAmt=0,sunsetAmt=0,precipAmt=0;
 
 function updateLighting(dt){
   const a=(state.time-6)/24*Math.PI*2,elev=Math.sin(a);
@@ -30,10 +30,10 @@ function updateLighting(dt){
   skyU.uZenith.value.copy(PAL.nightZ).lerp(zen,dayAmt);skyU.uHorizon.value.copy(PAL.nightH).lerp(hor,dayAmt);
   skyU.uGround.value.copy(skyU.uHorizon.value).multiplyScalar(.92);
   skyU.uSunCol.value.copy(PAL.sunDay).lerp(PAL.sunSet,sunsetAmt).multiplyScalar(dayAmt);skyU.uNight.value=nightAmt;skyU.uOvercast.value=overcast;skyU.uGlow.value=.6+sunsetAmt*.9;skyU.uTime.value=G.elapsed;
-  scene.fog.color.copy(skyU.uHorizon.value);const fogT=(w==='rainy'?.0031:w==='snowy'?.0037:w==='cloudy'?.0018:.00135)*(1+nightAmt*.15)*(G.fogScale||1);G.fogBase=lerp(G.fogBase??fogT,fogT,Math.min(dt*.6,1));
+  scene.fog.color.copy(skyU.uHorizon.value);const fogT=(w==='rainy'?.0031:w==='snowy'?.0037:w==='cloudy'?.0018:.00135)*(1+nightAmt*.15)*(G.fogScale||1)*(1+(G.fogAmt||0)*6.5+(G.stormAmt||0)*.6);G.fogBase=lerp(G.fogBase??fogT,fogT,Math.min(dt*.6,1));
   // early morning: mist lies in the valleys until the sun has burnt it off (not in the desert or on another world, less in wind)
   const mb=biomeAt(state.distance),mistT=smooth(state.time,4.8,6.3)*(1-smooth(state.time,8.2,10))*(mb==='desert'||mb==='planet'?0:mb==='coast'?.7:1)*(w==='windy'?.35:w==='rainy'?.5:1)*(G.mistScale??1);
-  mist=lerp(mist,mistT,Math.min(dt*.5,1));scene.fog.density=G.fogBase*(1+mist*.35)+Math.round(mist*40);scene.fog.color.lerp(_mistC.set(1,1,1).multiplyScalar(.82+.15*dayAmt),mist*.25);
+  mist=lerp(mist,Math.max(mistT,(G.fogAmt||0)*.9),Math.min(dt*.5,1));scene.fog.density=G.fogBase*(1+mist*.35)+Math.round(mist*40);scene.fog.color.lerp(_mistC.set(1,1,1).multiplyScalar(.82+.15*dayAmt),mist*.25);
   // a low sun casts long, soft shadows; a high one short, crisp ones
   sun.shadow.radius=lerp(2.5,7,1-smooth(elev,.06,.5));
   // sun by day, moon by night
@@ -58,7 +58,7 @@ function updateLighting(dt){
   { const c = cloudU.uCover.value; CLOUD.uCloud.value = .55 * smooth(c, .3, .6) * (1 - smooth(c, .9, 1)) * smooth(elev, .02, .15) * (1 - overcast * .6); CLOUD.uCloudT.value = G.elapsed * (w === 'windy' ? 3 : 1); }
   // lamps, windows, headlights
   const n=smooth(nightAmt,.25,.9);
-  MAT.windows.color.setRGB(.11,.13,.14).lerp(tmpA.setRGB(3.2,2.1,.95),n);MAT.lamps.color.setRGB(.9,.88,.8).lerp(tmpA.setRGB(7,5.2,3),n);MAT.pool.opacity=n*.35;
+  MAT.windows.color.setRGB(.11,.13,.14).lerp(tmpA.setRGB(3.2,2.1,.95),n);MAT.cats.userData.night.value=n;MAT.lamps.color.setRGB(.9,.88,.8).lerp(tmpA.setRGB(7,5.2,3),n);MAT.pool.opacity=n*.35;
   G.nightAmt=n;for(const l of headlights){const k=G.beamK||1;l.intensity=n*80*(.8+.2*k*k)+(G.flash||0)*140;l.distance=110+(k-1)*170;l.angle=.42+(k-1)*.1;l.target.position.y=.1+(k-1)*.9;}headGlow.opacity=Math.max(n*.7,(G.flash||0)*.95);tailGlow.opacity=n*.7;
   for(const [c,m] of Object.entries(lampMaterials))m.emissiveIntensity=c==='#f05b3e'||c==='#ed6042'?1.4+n*4:1.6+n*9;
   wet=lerp(wet,(G.rainAmt||0)>.3?1:0,Math.min(1,dt*((G.rainAmt||0)>.3?.3:.04)*wr));MAT.road.roughness=1-wet*.62;MAT.road.color.setScalar(1-wet*.3);MAT.road.userData.wet.value=wet;MAT.road.userData.rain.value=G.rainAmt||0;MAT.road.userData.lampK.value=wet*n*1.6;MAT.road.envMapIntensity=1+wet*.8;   // the road stays wet for a while after the rain stops

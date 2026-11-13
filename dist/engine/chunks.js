@@ -14,7 +14,7 @@ import {release,acquire,fitBounds,pooledGeometry,fillGeometry,recycle,poolStats}
 import {Scheduler} from './scheduler.js';
 import {setObstacles,clearObstacles} from './obstacles.js';
 import {G,state} from './state.js';
-import {season,seasonal,leafColor} from './season.js';
+import {season,seasonal,leafColor,seasonName} from './season.js';
 import {roadCurvature} from './road.js';
 import {REFL} from './reflect.js';
 /* ---------------------------------------------------------------- scenery */
@@ -89,8 +89,8 @@ function* chunkBuilder(index){
     if(!inst.has(mdl))inst.set(mdl,[]);inst.get(mdl).push(M(x,groundY(s,lx)-.08,z,k,k,k,rot??r()*6.283));return true;}
   // A real model near the camera, the low-poly version (in 'lod') when far away.
   const withModel=(role,size,fn)=>(s,lx,...a)=>{const hq=place(role,s,lx,size()*(a[0]||1));if(hq)forced=lod;fn(s,lx,...a);forced=null;};
-  const snowy=b==='snow',winter=!!season().snow&&seasonal(b)>0,alien=b==='planet',SZN=season();
-  const leaves=base=>leafColor(base,r,b);
+  const SZS=start+CH/2,SZ=seasonName(SZS),snowy=b==='snow',winter=!!season(SZS).snow&&seasonal(b)>0,alien=b==='planet',SZN=season(SZS);
+  const leaves=base=>leafColor(base,r,b,SZS);
   // bare branches for leafless trees in winter
   function branches(B,x,y0,z,h,scale){for(let i=0;i<5;i++){const a=i*1.26+r(),l=h*(.22+r()*.12),tilt=.55+r()*.35;
     B.solid.add(cylT(.5,5),M(x+Math.sin(a)*l*.35*Math.sin(tilt),y0+h*(.55+r()*.15)+l*.4*Math.cos(tilt),z+Math.cos(a)*l*.35*Math.sin(tilt),.07*scale,l,.07*scale,a,tilt,0),'#5d4c3c',{ao:.6});}}
@@ -260,6 +260,11 @@ function* chunkBuilder(index){
         put(boxT(),col,I,[cx,rb+ch/2-.6,cz],[.75,ch+.6,.75],[0,0,0],{vary:.1,ao:.7});put(boxT(),stone,I,[cx,rb+ch-.25,cz],[.9,.12,.9]);
         for(const k of [-.15,.15])put(cylT(.8,8),C('#9a5a40'),I,[cx+k,rb+ch-.05,cz],[.09,.35,.09]);
         if(r()<.65){const cp=new T.Vector3(cx,rb+ch+.25,cz).applyMatrix4(base);CHIM.push(cp.x,cp.y,cp.z,s);}}
+      // a washing line in the back garden, now and then (not in a town or in the rain)
+      if(!shop&&!cabin&&kind!=='townhouse'&&r()<.28&&G.weatherNow!=='rainy'&&G.weatherNow!=='snowy'){const lz=-d/2-3.2-r()*1.5,lw=4+r()*2,post=C('#7a6a55');
+        for(const sx of [-lw/2,lw/2])put(boxT(),post,I,[sx,FOUND+1.05,lz],[.09,2.1,.09]);put(boxT(),C("#d8d6cf"),I,[0,FOUND+2.02,lz],[lw,.015,.015]);
+        const cloths=['#e9e6dd','#c64b3c','#3f6e9e','#f0d36a','#7aa36b','#ffffff','#d89bb0','#5b5f66'];let x=-lw/2+.35;
+        while(x<lw/2-.5){const cw=.45+r()*.55,chh=.5+r()*.45;put(boxT(),C(pick(cloths)),I,[x+cw/2,FOUND+2.02-chh/2,lz],[cw,chh,.02],[(r()-.5)*.25,0,(r()-.5)*.06]);x+=cw+.12+r()*.25;}}
     }else if(modern){ // a flat roof with a deep overhang, timber cladding and a dark band
       const rb=FOUND+h;put(boxT(),C('#4a4e52'),I,[0,rb+.18,0],[w+1.2,.36,d+1.2],[0,0,0],{ao:.8});
       const wood=C(pick(['#9a6b45','#8a5d3b','#a57a52'])),cw=w*.38;for(let k=0;k<Math.floor(cw/.22);k++)put(boxT(),wood.clone().multiplyScalar(.9+r()*.2),front,[-w/2+.11+k*.22,FOUND+h/2,.04],[.16,h,.06]);
@@ -267,7 +272,7 @@ function* chunkBuilder(index){
     }
 
     // windows: frame, glass (lit at night), glazing bars, sill, head trim, optional shutters
-    const win=(F,cx,cy,ww,wh,shut)=>{put(boxT(),trim,F,[cx,cy,.02],[ww+.18,wh+.18,.08]);pane(F,[cx,cy,.05],[ww,wh,.04],r()<.6);
+    const win=(F,cx,cy,ww,wh,shut)=>{put(boxT(),trim,F,[cx,cy,.02],[ww+.18,wh+.18,.08]);pane(F,[cx,cy,.05],[ww,wh,.04],shop&&cy<FOUND+fh0?true:r()<.6);
       if(!shop||cy>FOUND+fh0){put(boxT(),trim,F,[cx,cy,.08],[.05,wh,.03]);put(boxT(),trim,F,[cx,cy+wh*.1,.08],[ww,.05,.03]);}
       put(boxT(),trim,F,[cx,cy-wh/2-.1,.1],[ww+.32,.07,.22]);put(boxT(),shop?stone:trim,F,[cx,cy+wh/2+.13,.05],[ww+.34,shop?.22:.12,.12]);
       if(shut)for(const sd of [-1,1])put(boxT(),shutterC,F,[cx+sd*(ww/2+.33),cy,.06],[.45,wh+.12,.05],[0,0,0],{vary:.05});};
@@ -369,7 +374,7 @@ function* chunkBuilder(index){
         {const ss=s+r()*6,lx=side*(70+r()*300),w=wood(ss,lx);if(w>.5&&r()<(coastal?.4:.85)){const big=(conifer||(b==='town'&&r()<.3));if(big)for(let q=0;q<2+Math.floor(r()*4);q++){const tl=lx+(r()-.5)*16;r()<.3?spruce(ss+(r()-.5)*14,tl,1.2):pine(ss+(r()-.5)*14,tl,1.2);}else grove(ss,lx,2+Math.floor(r()*4),1.25);}}
         {const ss=s+6,lx=side*(75+r()*120),w=wood(ss,lx);if(w>.6&&r()<(coastal?.3:.6))conifer?pine(ss,lx,1.1):deciduous(ss,lx,1.2);}
         // wildflowers in drifts beside the road, in spring and summer
-        if((state.season==='spring'||state.season==='summer')&&!snowy&&(b==='fields'||b==='mountain'||coastal)&&r()<(state.season==='spring'?.75:.55)){
+        if((SZ==='spring'||SZ==='summer')&&!snowy&&(b==='fields'||b==='mountain'||coastal)&&r()<(SZ==='spring'?.75:.55)){
           const FL=['#f4f1e8','#f2d14c','#f2d14c','#9b7bd1','#e89ab8','#d8433a','#ffffff'],fc=C(FL[Math.floor(r()*FL.length)]),cs=s+r()*12,cl=side*(9+r()*24);
           for(let q=0;q<14;q++){const a=r()*6.28,rr=Math.sqrt(r())*3.2,fs=cs+Math.cos(a)*rr,fl=cl+Math.sin(a)*rr;if(Math.abs(fl)<8.6)continue;const [fx,fz]=L(fs,fl),fy=groundY(fs,fl)+.32+r()*.18;
             near.solid.add(sphT(),M(fx,fy,fz,.09+r()*.05,.07,.09+r()*.05),fc.clone().offsetHSL(0,0,(r()-.5)*.08),{ao:.9});}}
@@ -650,8 +655,12 @@ function* chunkBuilder(index){
   if(inst.size){const hi=new T.Group();g.add(hi);g.userData.hi=hi;
     for(const [mdl,mats] of inst)for(const p of mdl.parts){const im=acquire('inst:'+p.geometry.uuid,()=>new T.InstancedMesh(p.geometry,p.material,INST_CAP)),n=Math.min(mats.length,INST_CAP);im.count=n;for(let i=0;i<n;i++)im.setMatrixAt(i,mats[i]);im.instanceMatrix.needsUpdate=true;im.castShadow=im.receiveShadow=true;im.computeBoundingSphere();hi.add(im);}
     g.userData.lo=[lod.solid.mesh(MAT.solid,{cast:true}),lod.foliage.mesh(MAT.foliage,{cast:true})].filter(Boolean);g.userData.lo.forEach(m=>g.add(m));}
+  // cat's eyes down the centre line: dull studs by day, glinting in the headlights at night
+  if(b!=='planet'){const cat=acquire('cats',()=>new T.InstancedMesh(catGeo,CATS,12));let nc=0;
+    for(let s=Math.ceil(start/12)*12;s<start+CH&&nc<12;s+=12){if(structureAt(s)===2)continue;const [cx,cz]=L(s,0);_cm.makeRotationY(roadYaw(s));_cm.setPosition(cx,roadSurface(s,0)+.025,cz);cat.setMatrixAt(nc++,_cm);}
+    cat.count=nc;cat.instanceMatrix.needsUpdate=true;cat.computeBoundingSphere();g.add(cat);}
   if((b==='fields'||b==='town'||b==='mountain'||b==='coast')&&!winter){const n=b==='town'?8000:b==='mountain'?20000:26000,im=acquire('grass:'+n,()=>new T.InstancedMesh(bladeGeo,MAT.grass,n)),col=_gc,dry=_dry,base=P0.ground.clone().offsetHSL(0,-.08,-.02);let cs=0,clx=0,cy=0,tall=1,pk=0,pc=null;
-    const fl=acquire('flowers',()=>new T.InstancedMesh(flowerGeo,flowerMat,FLOWER_CAP)),pal=FLOWERS[state.season]||FLOWERS.summer;let nf=0;
+    const fl=acquire('flowers',()=>new T.InstancedMesh(flowerGeo,flowerMat,FLOWER_CAP)),pal=FLOWERS[SZ]||FLOWERS.summer;let nf=0;
     for(let i=0;i<n;i++){if(i%1200===1199)yield;if(i%9===0){const side=r()<.5?-1:1;cs=start+r()*CH;clx=side*(8.25+Math.pow(r(),2.6)*(b==='town'?9:48));cy=groundY(cs,clx);
         // thick and tall beside the road, thinner and shorter further out; meadow patches of their own colour
         tall=1.3-.55*smooth(Math.abs(clx),9,34);const mv=vnoise(cs*.014+7,clx*.014+3);pk=mv>.58?(mv-.58)*2.2:mv<.38?(.38-mv)*2.4:0;pc=mv>.58?(r()<.3?_sage:_gold):_deep;
@@ -671,12 +680,15 @@ function* chunkBuilder(index){
   if(wires.length){const n=wires.length/3;g.add(new T.LineSegments(fillGeometry(pooledGeometry({position:3},n),{position:wires},n),MAT.wire));}
   g.userData.obstacles=OBS;g.userData.lights=LIGHTS;g.userData.chimneys=CHIM;g.userData.spin=SPIN;scene.add(g);return g;}
 
+// cat's eyes: a tiny stud whose reflector lights up when the headlights fall on it (bright close by, at night)
+const catGeo=new T.BoxGeometry(.16,.035,.1),_cm=new T.Matrix4();
+const CATS=MAT.cats;
 // surf: white foam that comes and goes along the shore
 const FOAM=new T.MeshBasicMaterial({color:'#f4f8f7',transparent:true,depthWrite:false,opacity:.85});
 FOAM.onBeforeCompile=sh=>{sh.uniforms.uTime=wind.time;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float edge;varying float vEdge;varying vec2 vP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvEdge=edge;vP=position.xz;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uTime;varying float vEdge;varying vec2 vP;')
-    .replace('#include <color_fragment>','#include <color_fragment>\nfloat wave=fract(vEdge*1.6-uTime*.12+sin(vP.x*.05+vP.y*.07)*.3);float foam=smoothstep(.0,.15,wave)*smoothstep(.6,.25,wave)*(1.-smoothstep(.55,1.,vEdge));foam*=.55+.45*sin(vP.x*.9+vP.y*.7+uTime*1.3);diffuseColor.a*=clamp(foam+ (1.-smoothstep(0.,.25,vEdge))*.6,0.,1.);');};
+    .replace('#include <color_fragment>','#include <color_fragment>\nfloat bend=sin(vP.x*.05+vP.y*.07)*.3,foam=0.;for(int i=0;i<3;i++){float fi=float(i);float wave=fract(vEdge*1.6-uTime*(.1+fi*.025)+bend+fi*.37);float line=smoothstep(.0,.12,wave)*smoothstep(.5,.2,wave)*(1.-smoothstep(.45,1.,vEdge));float lace=.45+.55*sin(vP.x*(.9+fi*.4)+vP.y*(.7+fi*.3)+uTime*(1.3+fi*.5));foam=max(foam,line*lace*(1.-fi*.2));}diffuseColor.a*=clamp(foam+(1.-smoothstep(0.,.25,vEdge))*.6,0.,1.);');};
 // shared pieces for the landmarks
 const BEAM=new T.MeshBasicMaterial({color:'#fff1c4',transparent:true,opacity:.07,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,fog:false});
 const SAILW=new T.MeshStandardMaterial({color:'#6b5440',roughness:.9}),SAILC=new T.MeshStandardMaterial({color:'#e8e1d0',roughness:.95,side:T.DoubleSide});

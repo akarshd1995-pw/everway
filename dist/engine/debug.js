@@ -63,7 +63,7 @@ if (DEBUG) window.__ev = {
   models: ASSETS?.models,
   get quality() { return G.quality; },
   get player() { return G.player; },
-  setWeather: w => { state.weather = w; G.weatherNow = w; G.weatherNext = null; G.snapWeather = 2; },
+  setWeather: w => { state.weather = w; G.stormy = w === 'stormy'; G.foggy = w === 'foggy'; G.weatherNow = w === 'stormy' ? 'rainy' : w === 'foggy' ? 'cloudy' : w; G.weatherNext = null; G.snapWeather = 2; },
   snap: () => new Promise(r => snapCb = r),
   setCam: (p, t) => setDebugView(p, t),
   /** Start a rare moment now (rainbow, mist, fireflies, meteors, aurora, starlings, horses, balloon). */

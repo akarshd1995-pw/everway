@@ -3,6 +3,7 @@
 // they drive. Under the detailed sections it is sunk out of sight, so the two never fight.
 import * as T from '../three.module.js';
 import {clamp, vnoise} from './core.js';
+import {seasonName} from './season.js';
 import {G, state} from './state.js';
 import {camera, scene} from './render.js';
 import {MAT, wind} from './materials.js';
@@ -61,7 +62,7 @@ function* buildFar(s0, x0, covered) {
   for (let r = 0; r <= N; r++) {
     const s = ss + view.radius - r * cell, P = terrainParams(s), rx = roadX(s), cs = roadCos(s), bio = biomeAt(s);
     const woodsHere = bio === 'desert' || bio === 'planet' || bio === 'snow' ? 0 : bio === 'coast' ? .5 : 1;
-    canopy.set(bio === 'mountain' ? '#24402e' : state.season === 'autumn' ? '#5a4a26' : state.season === 'winter' ? '#3b3a33' : '#2c4a28');
+    const szn = seasonName(s); canopy.set(bio === 'mountain' ? '#24402e' : szn === 'autumn' ? '#5a4a26' : szn === 'winter' ? '#3b3a33' : '#2c4a28');
     for (let i = 0; i <= N; i++) {
       const v = r * (N + 1) + i, hl = pos[(r * (N + 1) + Math.max(i - 1, 0)) * 3 + 1], hr = pos[(r * (N + 1) + Math.min(i + 1, N)) * 3 + 1];
       const hu = pos[(Math.max(r - 1, 0) * (N + 1) + i) * 3 + 1], hd = pos[(Math.min(r + 1, N) * (N + 1) + i) * 3 + 1];
@@ -88,12 +89,13 @@ function* buildFar(s0, x0, covered) {
 const sea = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshStandardMaterial({color: '#1a4656', roughness: .32, metalness: 0, envMapIntensity: .55}));
 sea.rotation.x = -Math.PI / 2; sea.receiveShadow = true; sea.visible = false; sea.renderOrder = -1;
 // living water: rolling swells and fine ripples bend the surface normal, so sunlight glitters on it
-const seaU = {uTime: wind.time, uOff: {value: new T.Vector2()}};
+const seaU = {uTime: wind.time, uOff: {value: new T.Vector2()}, uSunD: {value: new T.Vector3(0, 1, 0)}, uSunC: {value: new T.Color()}, uMoonD: {value: new T.Vector3(0, 1, 0)}, uMoonK: {value: 0}};
+export {seaU};
 sea.material.roughness = .18; sea.material.envMapIntensity = .75;
 sea.material.onBeforeCompile = sh => {
   Object.assign(sh.uniforms, seaU);
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeaW;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSeaW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uTime;uniform vec2 uOff;varying vec3 vSeaW;')
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uTime,uMoonK;uniform vec2 uOff;uniform vec3 uSunD,uSunC,uMoonD;varying vec3 vSeaW;')
     .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
       vec2 p = vec2(vSeaW.x + uOff.x, vSeaW.z - uOff.y);
       float t = uTime;
@@ -104,7 +106,16 @@ sea.material.onBeforeCompile = sh => {
       g += vec2(.2, .98) * cos(dot(p, vec2(.2, .98)) * .53 + t * 2.3) * .03;
       g += vec2(-.9, .4) * cos(dot(p, vec2(-.9, .4)) * 1.3 + t * 3.1) * .02;
       normal = normalize(normal + (viewMatrix * vec4(-g.x, 0., -g.y, 0.)).xyz);`)
-    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= .85 + .3 * smoothstep(-.5, .5, sin(vSeaW.x * .01 + vSeaW.z * .013));');
+    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= .85 + .3 * smoothstep(-.5, .5, sin(vSeaW.x * .01 + vSeaW.z * .013));'
+    // a path of glitter on the water towards a low sun or the moon: each wavelet that tilts just
+    // right flashes, with a soft glow along the path
+    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      { vec3 V = normalize(-vViewPosition), R = reflect(-V, normal);
+        vec3 Ls = normalize((viewMatrix * vec4(uSunD, 0.)).xyz), Lm = normalize((viewMatrix * vec4(uMoonD, 0.)).xyz);
+        float tw = fract(sin(dot(floor(vSeaW.xz * 1.7 + uOff * vec2(1., -1.) * 1.7) + floor(uTime * 6.), vec2(12.9898, 78.233))) * 43758.5453);
+        float sg = pow(max(dot(R, Ls), 0.), 700.) * (tw > .55 ? 7. : .4) + pow(max(dot(R, Ls), 0.), 30.) * .06;
+        float mg = pow(max(dot(R, Lm), 0.), 500.) * (tw > .6 ? 4. : .3) + pow(max(dot(R, Lm), 0.), 25.) * .05;
+        totalEmissiveRadiance += uSunC * sg * step(0., uSunD.y) + vec3(.75, .82, 1.) * mg * uMoonK; }`);
 };
 scene.add(sea);
 export const seaMaterial = sea.material;

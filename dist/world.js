@@ -23,6 +23,7 @@ import {updateDetails} from './engine/details.js';
 import {updateTrip} from './engine/trip.js';
 import {updateEvents} from './engine/events.js';
 import {updateMoments} from './engine/moments.js';
+import {updatePerch} from './engine/perch.js';
 import {recordReplay, replayFrame} from './engine/replay.js';
 import {updateWeather,updatePrecipitation} from './engine/weather.js';
 import {updateCamera} from './engine/camera.js';
@@ -35,6 +36,7 @@ import {pictureFrameEnd} from './engine/photo.js';
 import {trackDrive} from './engine/progress.js';
 import {updateScreen} from './engine/screen.js';
 import {updateCarReflection} from './engine/carreflect.js';
+import {updateAtmos} from './engine/atmos.js';
 
 // where the sun is on screen, and how strongly its light shafts show (low sun, broken cloud, sun ahead)
 const _sv = new T.Vector3();
@@ -94,6 +96,7 @@ function frame(now) {
   updateTrip(dt, run, base, yBase);
   updateEvents(dt, run, base, yBase);
   updateMoments(dt, run, base, yBase);
+  updatePerch(dt, run, base, yBase);
   updateDetails(dt, run);
 
   // sky, wind, light
@@ -101,8 +104,9 @@ function frame(now) {
   mountains.rotation.y = -base * .00006; mountains.position.y = -yBase;
   wind.time.value = G.elapsed;
   if (G.player) { wind.car.value.copy(G.player.position); wind.carV.value = Math.min(1, state.speed / 25); }
-  wind.amount.value = lerp(wind.amount.value, G.weatherNow === 'windy' ? .32 : G.weatherNow === 'rainy' ? .14 : .05, dt);
-  updateLighting(dt);
+  wind.amount.value = lerp(wind.amount.value, G.stormAmt > .3 ? .4 : G.weatherNow === 'windy' ? .32 : G.weatherNow === 'rainy' ? .14 : .05, dt);
+  updateLighting(dt); G.base = base;
+  updateAtmos(dt, run);
   { // headlights point where the vehicle points
     const P = G.player.position, th = G.player.rotation.y, fx = -Math.sin(th), fz = -Math.cos(th), rx = Math.cos(th), rz = -Math.sin(th);
     for (let i = 0; i < headlights.length; i++) { const l = headlights[i], o = i === 0 ? -.65 : .65;
@@ -122,7 +126,8 @@ function frame(now) {
   if (G.envTimer > 8 || (G.envTimer > 3 && Math.abs(key - G.lastEnvKey) > 1.5)) { G.envTimer = 0; G.lastEnvKey = key; bakeEnvironment(); }
 
   // render
-  if (G.quality.post) { sunRays(); updateScreen(dt); updateCarReflection(); renderReflection(camera, G.lakeLevel, LAKE); post.render(scene, camera, G.quality.bloom ? .24 + nightAmt * .45 : 0, 1.05, G.quality.ao * (.55 + .45 * dayAmt)); }
+  updateCarReflection();
+  if (G.quality.post) { sunRays(); updateScreen(dt); renderReflection(camera, G.lakeLevel, LAKE); post.render(scene, camera, G.quality.bloom ? .24 + nightAmt * .45 : 0, 1.05, G.quality.ao * (.55 + .45 * dayAmt)); }
   else { renderer.setRenderTarget(null); renderer.render(scene, camera); }
   pictureFrameEnd();
   adaptQuality(dt);

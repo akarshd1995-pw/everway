@@ -304,7 +304,7 @@ function burst({dur = .2, type = 'bandpass', f0 = 1000, f1 = f0, q = 1, gain = .
   f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(.0004, t + dur);
   p.pan.value = pan; src.connect(f).connect(g).connect(p).connect(dry); if (send) { const sg = gainNode(send); p.connect(sg).connect(tunnelSend); }
-  src.start(t, Math.random() * Math.max(0, 1.5 - dur)); src.stop(t + dur + .05);
+  src.loop = dur > 1.4; src.start(t, Math.random() * Math.max(0, 1.5 - dur)); src.stop(t + dur + .05);
 }
 const bursts = {};
 /** Passing something: a rush of air that falls in pitch as it goes by (the Doppler shift). */
@@ -346,8 +346,16 @@ function owl() { const pan = Math.random() * 1.6 - .8; tone({f0: 420, f1: 400, d
 function gull(sea) { const pan = sea * (.4 + Math.random() * .5); for (let i = 0; i < 3; i++) tone({type: 'triangle', f0: 1500, f1: 1000, dur: .28, gain: .006, pan, cut: 3000, at: i * .3, send: .4}); }
 
 /** One-off sounds. */
-export function sfx(kind) {
+export function sfx(kind, opt = {}) {
   if (!ctx || !state.sound) return;
+  if (kind === 'thunder') {
+    // near: a sharp crack then a long roll; far: only a low grumble, rolling around the hills
+    const d = opt.dist ?? 2000, near = Math.max(0, 1 - d / 2500), pan = opt.pan || 0;
+    if (near > .45) burst({dur: .5, type: 'highpass', f0: 1800, f1: 600, gain: .12 * near, pan, attack: .004, send: .4});
+    burst({dur: 4 + 3 * (1 - near), type: 'lowpass', f0: 260 + 500 * near, f1: 50, gain: .22 * (.35 + .65 * near), pan, attack: .08 + (1 - near) * .5, kind: 'brown', send: .6});
+    setTimeout(() => ctx && burst({dur: 3.5, type: 'lowpass', f0: 160, f1: 45, gain: .12 * (.4 + .6 * near), pan: -pan * .5, attack: .4, kind: 'brown', send: .7}), 900 + Math.random() * 900);
+    return;
+  }
   if (kind === 'tick' || kind === 'tock') { burst({dur: .03, type: 'bandpass', f0: kind === 'tick' ? 2400 : 1700, q: 3, gain: .05, attack: .001}); return; }
   if (kind === 'splash') burst({dur: 1.5, f0: 900, f1: 300, q: .6, gain: .25, attack: .01});
   else { thump(.5); burst({dur: .35, type: 'bandpass', f0: 900, f1: 300, gain: .12, attack: .002}); }

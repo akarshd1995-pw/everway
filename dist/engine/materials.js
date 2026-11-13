@@ -43,11 +43,17 @@ for(const k of ['grass','rock','sand','snow']){const a=ASSETS?.textures[k];LAYER
 
 // Road surface: breaks up the repeating texture with slow variation along the road, adds repaired
 // patches and fading paint here and there, and on a wet road pools of water that shine.
-MAT.road.userData.wet={value:0};MAT.road.userData.lamps={value:Array.from({length:16},()=>new T.Vector4())};MAT.road.userData.lampN={value:0};MAT.road.userData.lampK={value:0};MAT.road.userData.rain={value:0};MAT.road.userData.time=wind.time;
-MAT.road.onBeforeCompile=sh=>{const U=MAT.road.userData;sh.uniforms.uWet=U.wet;sh.uniforms.uLamps=U.lamps;sh.uniforms.uLampN=U.lampN;sh.uniforms.uLampK=U.lampK;sh.uniforms.uRainNow=U.rain;sh.uniforms.uTime=U.time;
+MAT.road.userData.wet={value:0};MAT.road.userData.lamps={value:Array.from({length:16},()=>new T.Vector4())};MAT.road.userData.lampN={value:0};MAT.road.userData.lampK={value:0};MAT.road.userData.rain={value:0};MAT.road.userData.snow={value:0};MAT.road.userData.time=wind.time;
+// cat's eyes: a tiny stud whose reflector lights up when the headlights fall on it (bright close by, at night)
+MAT.cats=new T.MeshBasicMaterial({color:'#8d8f88',fog:true});MAT.cats.userData.night={value:0};
+MAT.cats.onBeforeCompile=sh=>{sh.uniforms.uNight=MAT.cats.userData.night;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vCatD;').replace('#include <project_vertex>','#include <project_vertex>\nvCatD=-mvPosition.z;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uNight;varying float vCatD;')
+    .replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(5.,4.2,2.6)*(1.-smoothstep(25.,150.,vCatD))+diffuseColor.rgb*.2,uNight);');};
+MAT.road.onBeforeCompile=sh=>{const U=MAT.road.userData;sh.uniforms.uWet=U.wet;sh.uniforms.uLamps=U.lamps;sh.uniforms.uLampN=U.lampN;sh.uniforms.uLampK=U.lampK;sh.uniforms.uRainNow=U.rain;sh.uniforms.uSnowRoad=U.snow;sh.uniforms.uTime=U.time;
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vRW;').replace('#include <project_vertex>','#include <project_vertex>\nvRW=(modelMatrix*vec4(transformed,1.)).xyz;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-uniform float uWet,uLampN,uLampK,uRainNow,uTime;uniform vec4 uLamps[16];varying vec3 vRW;
+uniform float uWet,uLampN,uLampK,uRainNow,uTime,uSnowRoad;uniform vec4 uLamps[16];varying vec3 vRW;
 float rh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float rn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(rh(i),rh(i+vec2(1.,0.)),f.x),mix(rh(i+vec2(0.,1.)),rh(i+1.),f.x),f.y);}
 float puddle;`)
@@ -65,9 +71,23 @@ float puddle;`)
     float lum=dot(diffuseColor.rgb,vec3(.33));
     float worn=smoothstep(.45,.85,rn(vec2(q.y*2.3,q.x*40.)))*.6;
     diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.3,.31,.3)*diffuseColor.rgb/max(lum,.01)*.5,step(.42,lum)*worn*asphalt*.7);
+    // the wheel paths are a shade darker and smoother, with the odd rubber mark from a hard stop
+    float paths=0.;for(int i=0;i<4;i++){float c=i==0?.215:i==1?.385:i==2?.615:.785;paths=max(paths,1.-smoothstep(.012,.04,abs(q.x-c)));}
+    diffuseColor.rgb*=1.-paths*asphalt*.07*(.6+.4*rn(vec2(q.y*.6,q.x*3.)));
+    float skidCell=floor(q.y*.08),sk=rh(vec2(skidCell,4.2));
+    if(sk>.82){float x0=.215+step(.5,rh(vec2(skidCell,8.1)))*.4,along=fract(q.y*.08),bendx=sin(along*3.1)*.02;
+      float mark=(1.-smoothstep(.006,.016,abs(q.x-x0-bendx)))+(1.-smoothstep(.006,.016,abs(q.x-x0-.17-bendx)));
+      diffuseColor.rgb*=1.-mark*asphalt*smoothstep(.0,.15,along)*smoothstep(.55,.3,along)*.35;}
     // standing water after rain
     puddle=uWet*asphalt*smoothstep(.62,.78,rn(vec2(q.y*.9+3.,q.x*6.)));
-    diffuseColor.rgb*=1.-puddle*.35; }`)
+    diffuseColor.rgb*=1.-puddle*.35;
+    // snow: it settles first at the edges and down the middle; the wheel paths stay as dark, slushy tracks
+    if(uSnowRoad>0.){float edge=1.-smoothstep(.12,.2,min(q.x,1.-q.x)),mid=1.-smoothstep(.02,.07,abs(q.x-.5));
+      float cover=clamp(uSnowRoad*1.6-.2+rn(vec2(q.y*1.3,q.x*9.))*.35,0.,1.);
+      float sn=max(edge*smoothstep(0.,.3,uSnowRoad),max(mid*.8,1.-paths*.92)*cover);sn*=.85+.15*rn(vec2(q.y*4.,q.x*30.));
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.86,.89,.92),clamp(sn,0.,1.)*.92);
+      diffuseColor.rgb*=1.-paths*uSnowRoad*asphalt*.25;
+      puddle*=1.-sn;} }`)
   .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.04,puddle);')
   // raindrops landing in the puddles: little rings that spread and fade
   .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>

@@ -48,7 +48,7 @@ function biomeMix(s){if(state.biome!=='auto')return {a:state.biome,b:state.biome
 function terrainParams(s){const m=biomeMix(s),A=BIOMES[m.a],B=BIOMES[m.b],t=m.t,o={};
   for(const k of ['flat','amp','ridge','terrace','crops','snowline','sand','coast','alien'])o[k]=lerp(A[k]||0,B[k]||0,t);
   for(const k of ['ground','ground2','verge','rock'])o[k]=A[k+'C'].clone().lerp(B[k+'C'],t);
-  seasonGround(o,lerp(seasonal(m.a),seasonal(m.b),t));return o;}
+  seasonGround(o,lerp(seasonal(m.a),seasonal(m.b),t),s);return o;}
 
 function heightAt(s,lx,P){const ax=Math.abs(lx);if(ax<8)return -.06;
   let h=(fbm(s*.03,lx*.03,2)-.5)*.9*smooth(ax,8.5,16);

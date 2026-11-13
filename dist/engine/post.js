@@ -39,7 +39,7 @@ class Post{
       void main(){float d0=lin(texture2D(tDepth,vUv).x),s=0.,w=0.;for(int i=-3;i<=3;i++){vec2 uv=vUv+dir*float(i);float di=lin(texture2D(tDepth,uv).x);
         float wt=exp(-float(i*i)/6.)/(1.+abs(di-d0)/(d0*.03+.05)*3.);s+=texture2D(tAO,uv).r*wt;w+=wt;}gl_FragColor=vec4(vec3(s/w),1.);}`,{tAO:{value:null},tDepth:{value:null},dir:{value:new T.Vector2()},uNear:{value:.1},uFar:{value:3200}});
     this.comp=passMat(`uniform sampler2D tScene,tB0,tB1,tB2,tB3,tAO,tDepth,tSoft;uniform float bloom,exposure,saturation,vignette,aoAmt,rays;uniform vec2 sunUv,aspect;uniform vec3 gain,lift,rayCol;varying vec2 vUv;
-      uniform float uNear,uFar,uTime,uWet,uRain,uCockpit,uSpeed,uDof,uFocus,uMono,uContrast,uGrain,uBars,uFlare,uSunVis;uniform vec3 uTint,uUpV;uniform vec4 uWipe;uniform vec2 uPivA,uPivB;uniform mat4 uInvProj;
+      uniform float uNear,uFar,uTime,uWet,uRain,uCockpit,uSpeed,uDof,uFocus,uMono,uContrast,uGrain,uBars,uFlare,uSunVis,uHaze;uniform vec3 uTint,uUpV,uHazeCol;uniform vec4 uWipe;uniform vec2 uPivA,uPivB;uniform mat4 uInvProj;
       vec3 RRTAndODTFit(vec3 v){vec3 a=v*(v+.0245786)-.000090537;vec3 b=v*(.983729*v+.4329510)+.238081;return a/b;}
       vec3 aces(vec3 c){const mat3 I=mat3(vec3(.59719,.07600,.02840),vec3(.35458,.90834,.13383),vec3(.04823,.01566,.83777));const mat3 O=mat3(vec3(1.60475,-.10208,-.00327),vec3(-.53108,1.10813,-.07276),vec3(-.07367,-.00605,1.07602));c*=exposure/.6;c=I*c;c=RRTAndODTFit(c);c=O*c;return clamp(c,0.,1.);}
       vec3 srgb(vec3 c){return mix(c*12.92,1.055*pow(c,vec3(1./2.4))-.055,step(.0031308,c));}
@@ -61,7 +61,12 @@ class Post{
         float drop=0.;if(uRain>0.){float amt=uRain;
           if(uCockpit>.5&&uWipe.w>0.){float sw=min(sinceWipe(vUv,uPivA),sinceWipe(vUv,uPivB));amt*=clamp(sw/(1.2+(1.-uRain)*2.5),0.,1.);}
           vec3 r=rainOn(vUv,amt,drop);uv=clamp(vUv-r.xy*2.2,.001,.999);}
+        // heat haze: far away, close to the ground, the air wobbles and the road ahead mirrors the sky
+        float hz=0.;if(uHaze>0.&&dRaw<.99999){hz=uHaze*smoothstep(90.,260.,z)*(1.-smoothstep(1500.,2600.,z));
+          uv+=vec2(sin(vUv.y*620.+uTime*7.)*.0011+sin(vUv.y*270.-uTime*4.3)*.0008,sin(vUv.x*300.+uTime*5.)*.0006)*hz;}
         vec3 c=texture2D(tScene,uv).rgb;
+        if(hz>0.){vec4 vp2=uInvProj*vec4(vUv*2.-1.,dRaw*2.-1.,1.);vec3 P2=vp2.xyz/vp2.w,N2=normalize(cross(dFdx(P2),dFdy(P2)));if(dot(N2,P2)>0.)N2=-N2;
+          float fl=smoothstep(.85,.97,dot(N2,uUpV));c=mix(c,uHazeCol*1.05,fl*hz*smoothstep(160.,420.,z)*.55);}
         if(drop>0.)c=mix(c,texture2D(tSoft,uv).rgb*1.08,drop*.55);
         // speed: the edges of the picture stream past when you are really moving
         if(uSpeed>0.){vec2 dir=uv-vec2(.5,.56);float k=uSpeed*smoothstep(.12,.7,length(dir*aspect));vec3 acc=c;
@@ -93,7 +98,7 @@ class Post{
         if(uBars>0.&&abs(vUv.y-.5)>.5-uBars)c=vec3(0.);
         c+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-.5)/255.;gl_FragColor=vec4(c,1.);}`,
       {tScene:{value:null},tAO:{value:null},tDepth:{value:null},tSoft:{value:null},aoAmt:{value:0},tB0:{value:null},tB1:{value:null},tB2:{value:null},tB3:{value:null},bloom:{value:.5},exposure:{value:1},saturation:{value:1.06},vignette:{value:.28},rays:{value:0},sunUv:{value:new T.Vector2(.5,.8)},aspect:{value:new T.Vector2(1,1)},rayCol:{value:new T.Vector3(1,.9,.75)},gain:{value:new T.Vector3(1,1,1)},lift:{value:new T.Vector3()},
-       uNear:{value:.1},uFar:{value:3200},uTime:{value:0},uWet:{value:0},uRain:{value:0},uCockpit:{value:0},uSpeed:{value:0},uDof:{value:0},uFocus:{value:10},uMono:{value:0},uContrast:{value:1},uGrain:{value:0},uBars:{value:0},uFlare:{value:0},uSunVis:{value:0},uTint:{value:new T.Vector3(1,1,1)},uUpV:{value:new T.Vector3(0,1,0)},uWipe:{value:new T.Vector4()},uPivA:{value:new T.Vector2(.4,0)},uPivB:{value:new T.Vector2(.6,0)},uInvProj:{value:new T.Matrix4()}});
+       uNear:{value:.1},uFar:{value:3200},uTime:{value:0},uWet:{value:0},uRain:{value:0},uCockpit:{value:0},uSpeed:{value:0},uDof:{value:0},uFocus:{value:10},uMono:{value:0},uContrast:{value:1},uGrain:{value:0},uBars:{value:0},uFlare:{value:0},uSunVis:{value:0},uTint:{value:new T.Vector3(1,1,1)},uHaze:{value:0},uHazeCol:{value:new T.Color()},uUpV:{value:new T.Vector3(0,1,0)},uWipe:{value:new T.Vector4()},uPivA:{value:new T.Vector2(.4,0)},uPivB:{value:new T.Vector2(.6,0)},uInvProj:{value:new T.Matrix4()}});
   }
   setSize(w,h,samples){
     this.dispose();this.w=w;this.h=h;

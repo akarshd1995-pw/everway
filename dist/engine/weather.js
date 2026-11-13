@@ -10,7 +10,13 @@ export function pickWeather() {
   const k = Math.floor(state.distance / 950) + (state.weatherOffset || 0);
   if (b === 'planet') return ['sunny', 'windy', 'sunny'][k % 3];
   if (b === 'snow' || (state.season === 'winter' && b !== 'desert')) return ['snowy', 'cloudy', 'snowy', 'sunny'][k % 4];
-  return ['sunny', 'cloudy', 'windy', 'rainy', 'sunny'][k % 5];
+  const w = ['sunny', 'cloudy', 'windy', 'rainy', 'sunny'][k % 5], h = ((k * 2654435761) >>> 0) / 4294967296;
+  // some rain comes as a thunderstorm (more in summer), some cloudy spells as fog (mostly mornings and in winter and autumn)
+  if (state.weather === 'auto') {
+    G.stormy = w === 'rainy' && b !== 'desert' && h < (state.season === 'summer' ? .55 : .3);
+    G.foggy = w === 'cloudy' && b !== 'desert' && h < ((state.time < 11 || state.season === 'autumn' || state.season === 'winter') ? .55 : .2);
+  }
+  return w;
 }
 
 // Weather changes in stages, as it does outside: before rain the clouds gather and the light dims,
